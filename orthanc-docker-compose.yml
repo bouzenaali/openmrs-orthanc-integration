@@ -1,0 +1,57 @@
+# orthanc-docker-compose.yml
+
+services:
+  orthanc-db:
+    image: postgres:13-alpine # Use an ARM64 compatible PostgreSQL image for efficiency
+    container_name: orthanc-postgres-db
+    restart: always
+    environment:
+      POSTGRES_DB: orthanc
+      POSTGRES_USER: orthanc
+      POSTGRES_PASSWORD: orthanc_password # **CHANGE THIS TO A STRONG, UNIQUE PASSWORD**
+    volumes:
+      - orthanc_postgres_data:/var/lib/postgresql/data # Persistent volume for PostgreSQL data
+    healthcheck: # Optional but recommended: Ensures PostgreSQL is fully ready
+      test: ["CMD", "pg_isready", "-U", "$$POSTGRES_USER", "-d", "$$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  orthanc:
+    image: orthancteam/orthanc:latest # Recommended ARM64 compatible image
+    container_name: orthanc-pacs
+    restart: always
+    ports:
+      - "4242:4242" # DICOM C-STORE/C-FIND/C-MOVE port
+      - "8042:8042" # HTTP REST API / Orthanc Explorer web interface port
+    environment:
+      # Orthanc core configuration via environment variables [12]
+      ORTHANC__NAME: "OpenMRS_Orthanc_PACS"
+      ORTHANC__DICOM_AET: "ORTHANC" # Default AETitle for Orthanc [18]
+      ORTHANC__REMOTE_ACCESS_ALLOWED: "true" # Allow web access from outside container (e.g., from OpenMRS container or host)
+      ORTHANC__AUTHENTICATION_ENABLED: "true" # Enable basic HTTP authentication
+      ORTHANC__REGISTERED_USERS: '{"orthanc": "orthanc_admin_password"}' # **CHANGE THIS USERNAME AND PASSWORD**
+      # PostgreSQL plugin configuration [15]
+      ORTHANC__POSTGRESQL__ENABLE_INDEX: "true" # Enable PostgreSQL for DICOM index
+      ORTHANC__POSTGRESQL__ENABLE_STORAGE: "true" # Store DICOM files as large objects in DB (recommended for unified data management)
+      ORTHANC__POSTGRESQL__HOST: orthanc-db # Use the service name for PostgreSQL container
+      ORTHANC__POSTGRESQL__PORT: "5432"
+      ORTHANC__POSTGRESQL__DATABASE: orthanc
+      ORTHANC__POSTGRESQL__USERNAME: orthanc
+      ORTHANC__POSTGRESQL__PASSWORD: orthanc_password # Must match DB password
+      ORTHANC__PLUGINS:
+      # Optional: For OpenMRS Imaging Module integration, if a custom plugin is used
+      # ORTHANC__PYTHON_SCRIPT: "/etc/orthanc/scripts/openmrs_integration_plugin.py" # Mount your custom Python script here
+    volumes:
+      # Persistent volume for Orthanc's internal data (e.g., logs, temporary files, or DICOM files if EnableStorage is false)
+      - orthanc_data:/var/lib/orthanc
+      # If you have custom Orthanc configuration files or scripts, mount them:
+      # -./orthanc_custom.json:/etc/orthanc/orthanc.json:ro
+      # -./scripts/openmrs_integration_plugin.py:/etc/orthanc/scripts/openmrs_integration_plugin.py:ro
+    depends_on:
+      orthanc-db:
+        condition: service_healthy # Ensures Orthanc starts only after PostgreSQL is healthy
+
+volumes:
+  orthanc_postgres_data: # Define the named volume for PostgreSQL data persistence
+  orthanc_data: # Define the named volume for Orthanc's internal data

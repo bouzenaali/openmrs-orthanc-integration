@@ -1,0 +1,3 @@
+[submodule "openmrs-module-imaging"]
+	path = openmrs-module-imaging
+	url = https://github.com/sadrezhao/openmrs-module-imaging.git

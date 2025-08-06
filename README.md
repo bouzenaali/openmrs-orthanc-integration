@@ -132,81 +132,82 @@ To test the integration, follow these steps:
       - In OpenMRS, navigate to the patient dashboard for the patient linked to the DICOM image.
       - The Imaging Module should now display the study, allowing you to view the images from Orthanc.
 
+### Phase 2: Deployment and Security
 
-
-Installing Docker on your Ubuntu server is a straightforward process. Here are the steps to follow using the command line.
-
------
-
-### 1\. Update Your System
-
-Open the terminal and run the following commands to ensure all your existing packages are up to date.
-
-```bash
-sudo apt update
-sudo apt upgrade -y
-```
+This phase is about securing your applications with a reverse proxy and deploying the solution. A **reverse proxy** acts as an intermediary, sitting in front of your applications to handle requests. This allows you to centralize security, enabling HTTPS encryption and preventing direct access to your application containers.
 
 -----
 
-### 2\. Install Dependencies
+### 1\. Set Up the Reverse Proxy
 
-Install the necessary packages that allow `apt` to use a repository over HTTPS.
+We'll use **Nginx Proxy Manager**, which is a great Docker-based solution with a simple graphical interface.
 
-```bash
-sudo apt install ca-certificates curl gnupg lsb-release -y
-```
+1.  **Create a Directory:** Open your terminal and create a new directory for the proxy.
+
+    ```bash
+    mkdir nginx-proxy-manager
+    cd nginx-proxy-manager
+    ```
+
+2.  **Create a Docker Compose File:** Create a file named `docker-compose.yml` with the following content. This file defines the Nginx Proxy Manager service and its settings.
+
+    ```yaml
+    version: '3.8'
+
+    services:
+      app:
+        image: 'jc21/nginx-proxy-manager:latest'
+        restart: unless-stopped
+        ports:
+          - '80:80'
+          - '443:443'
+          - '81:81'
+        volumes:
+          - ./data:/data
+          - ./letsencrypt:/etc/letsencrypt
+    ```
+
+      * `ports`: This maps the host's ports (`80`, `443`, `81`) to the container's ports. Port `80` is for HTTP, `443` is for HTTPS, and `81` is for the proxy's web interface.
+      * `volumes`: This ensures that the proxy's data and SSL certificates persist even if you restart the container.
+
+3.  **Start the Proxy:** Run the following command in the terminal from inside the `nginx-proxy-manager` directory.
+
+    ```bash
+    docker compose up -d
+    ```
+
+    The `-d` flag runs the containers in the background.
 
 -----
 
-### 3\. Add Docker's GPG Key
+### 2\. Configure the Reverse Proxy and Enable HTTPS 🔒
 
-Add Docker's official GPG key to your system to verify the integrity of the downloaded packages.
-
-```bash
-sudo mkdir -p /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-```
-
------
-
-### 4\. Set Up the Docker Repository
-
-Add the Docker repository to your system's `apt` sources.
-
-```bash
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-```
+1.  **Access the Web Interface:** Open a web browser and navigate to `http://<your_server_ip>:81`. This will bring you to the Nginx Proxy Manager login screen.
+2.  **Log In and Change Credentials:** Log in with the default credentials:
+      * **Email:** `admin@example.com`
+      * **Password:** `changeme`
+        You will be prompted to immediately change these to secure credentials.
+3.  **Set Up Proxy Hosts:** This is where you connect your domain names to your Docker containers. For OpenMRS and Orthanc, you'll create two separate "Proxy Hosts."
+      * For each host, you'll need to enter the **domain name** (e.g., `openmrs.hospital.lan` or `orthanc.hospital.lan`).
+      * You'll also need the **internal hostname** of the target container (`openmrs-app` or `orthanc-app`) and its internal port (`8080` for OpenMRS, `8042` for Orthanc).
+      * Under the "SSL" tab, you'll request a **free Let's Encrypt SSL certificate**. This process is automated and will enable HTTPS.
 
 -----
 
-### 5\. Install Docker Engine and Docker Compose
+### 3\. Deploy OpenMRS and Orthanc
 
-Update your package list again to include the new Docker repository, and then install the Docker Engine and the Docker Compose plugin.
+Now that the security layer is in place, you can deploy your solution.
 
-```bash
-sudo apt update
-sudo apt install docker-ce docker-ce-cli containerd.io docker-compose-plugin -y
-```
+1.  **Update the `docker-compose.yml`:** Edit your solution's `docker-compose.yml` file.
 
------
+      * **Change Passwords:** Update all default passwords for MySQL, PostgreSQL, and Orthanc to strong, secure passwords. This is a critical security measure.
+      * **Network Configuration:** Add the `nginx-proxy-manager` network to your OpenMRS and Orthanc services. This allows the proxy to "see" your application containers.
+      * **OpenMRS Integration:** Change the Orthanc URL within the OpenMRS configuration to use the new, secure HTTPS domain (e.g., `https://orthanc.hospital.lan`) instead of the old `http://orthanc-app:8042`.
 
-### 6\. Verify the Installation
+2.  **Deploy the Solution:** In the terminal, navigate to the directory containing your updated `docker-compose.yml` file and run:
 
-Check that Docker is installed and running correctly.
+    ```bash
+    docker compose up -d
+    ```
 
-```bash
-sudo docker run hello-world
-```
-
-If the installation was successful, you will see a message indicating that your installation appears to be working correctly.
-
-### 7\. Manage Docker Without Sudo (Optional)
-
-To run Docker commands without needing to use `sudo` every time, add your user to the `docker` group.
-
-```bash
-sudo usermod -aG docker $USER
-```
-
-After running this command, you must **log out and log back in** for the changes to take effect.
+    This will start all your services, and they will now be accessible securely through the domains you configured in Nginx Proxy Manager.

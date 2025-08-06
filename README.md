@@ -131,3 +131,82 @@ To test the integration, follow these steps:
 
       - In OpenMRS, navigate to the patient dashboard for the patient linked to the DICOM image.
       - The Imaging Module should now display the study, allowing you to view the images from Orthanc.
+
+
+
+Installing Docker on your Ubuntu server is a straightforward process. Here are the steps to follow using the command line.
+
+-----
+
+### 1\. Update Your System
+
+Open the terminal and run the following commands to ensure all your existing packages are up to date.
+
+```bash
+sudo apt update
+sudo apt upgrade -y
+```
+
+-----
+
+### 2\. Install Dependencies
+
+Install the necessary packages that allow `apt` to use a repository over HTTPS.
+
+```bash
+sudo apt install ca-certificates curl gnupg lsb-release -y
+```
+
+-----
+
+### 3\. Add Docker's GPG Key
+
+Add Docker's official GPG key to your system to verify the integrity of the downloaded packages.
+
+```bash
+sudo mkdir -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+```
+
+-----
+
+### 4\. Set Up the Docker Repository
+
+Add the Docker repository to your system's `apt` sources.
+
+```bash
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+```
+
+-----
+
+### 5\. Install Docker Engine and Docker Compose
+
+Update your package list again to include the new Docker repository, and then install the Docker Engine and the Docker Compose plugin.
+
+```bash
+sudo apt update
+sudo apt install docker-ce docker-ce-cli containerd.io docker-compose-plugin -y
+```
+
+-----
+
+### 6\. Verify the Installation
+
+Check that Docker is installed and running correctly.
+
+```bash
+sudo docker run hello-world
+```
+
+If the installation was successful, you will see a message indicating that your installation appears to be working correctly.
+
+### 7\. Manage Docker Without Sudo (Optional)
+
+To run Docker commands without needing to use `sudo` every time, add your user to the `docker` group.
+
+```bash
+sudo usermod -aG docker $USER
+```
+
+After running this command, you must **log out and log back in** for the changes to take effect.

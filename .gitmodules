@@ -1,3 +1,9 @@
 [submodule "openmrs-module-imaging"]
 	path = openmrs-module-imaging
 	url = https://github.com/sadrezhao/openmrs-module-imaging.git
+[submodule "Neurosurgery-patientview-OpenMRS-module"]
+	path = Neurosurgery-patientview-OpenMRS-module
+	url = https://github.com/cha-ki-b/Neurosurgery-patientview-OpenMRS-module
+[submodule "custom-imaging-openmrs"]
+	path = custom-imaging-openmrs
+	url = https://github.com/cha-ki-b/custom-imaging-openmrs

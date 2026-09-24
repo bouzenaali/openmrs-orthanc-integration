@@ -132,29 +132,95 @@ neither can act as the other, and nothing on the LAN has ambient access.
 
 ### 4.2 Rotate the exposed credential
 
-**Decision: rotate.** Runbook, in order. Each step is production-impacting and must be
-verified before the next.
+**Decision (2026-09-24): rotate.**
 
-1. Choose the new password. Do not put it in any tracked file.
-2. Update Orthanc's `RegisteredUsers` and restart Orthanc. Verify: direct `8042` still
-   answers **401** to the old credential and **200** to the new one.
-3. Update `orthanc-cors-proxy.conf`. **This is a single-file bind mount — truncate in
-   place with `cat new > file`; `sed -i` and most editors replace the inode and leave the
-   container serving stale content.** Verify with `docker exec orthanc-cors-proxy cat
-   /etc/nginx/conf.d/default.conf`, then reload nginx.
-4. Update the OpenMRS imaging module's Orthanc credentials **through the OpenMRS UI, not
-   SQL** — global properties and module config are cached in memory and a direct `UPDATE`
-   leaves the running app serving the old value.
-5. Re-check every other consumer before declaring done: the imaging module's sync, the
-   Stone and Orthanc-Explorer viewers, and anything in `patches/` or `backup files/` that
-   carries the old value.
-6. Consider whether the new secret belongs in a file that is tracked at all. Injecting it
-   from an environment variable at container start keeps it out of the repository
-   permanently and prevents a repeat.
+#### 4.2.1 Who actually uses it — enumerated 2026-09-24
 
-> Do not treat rotation as complete until a **fresh clone of the public repo** has been
-> checked for any remaining live-matching value — the same hash-comparison method
-> `CLAUDE.md` used for the 2026-09-07 finding.
+Established by scanning 2,739 files across the project and both sibling service
+directories, the OpenMRS database, Nginx Proxy Manager, every running container's
+environment, and Server 2. Values were compared, never printed.
+
+**Live consumers — these break if they are not updated:**
+
+| # | Consumer | Where it lives | How it must be changed |
+| --- | --- | --- | --- |
+| 1 | **Orthanc itself** (the authority) | `ORTHANC__REGISTERED_USERS` in `orthanc-docker-compose.yml`, reaching `orthanc-pacs` as container env | edit, then recreate the container |
+| 2 | **`orthanc-cors-proxy`** — injects Basic auth for the browser | the `Authorization` header in `orthanc-cors-proxy.conf` | **single-file bind mount: `cat new > file`, never `sed -i`**, then reload nginx |
+| 3 | **OpenMRS imaging module** | DB `imaging_OrthancConfiguration`, row `id=1`, `orthancUsername=orthanc` — confirmed byte-identical to the exposed value | **through the OpenMRS UI, never SQL** — module config is cached in memory |
+
+There is no fourth. That is the whole functional surface.
+
+**Confirmed clean — checked, not assumed:** the live NPM database and all three
+`proxy_host/*.conf` files (NPM never needed the credential); `report-generation-service`;
+`certificates/`; every tracked file in `server2-stack`; and every running container on
+Server 1 other than `orthanc-pacs`.
+
+**Copies that leak it without being consumers.** Tracked in git, therefore published:
+
+```
+orthanc-cors-proxy.conf                                     (live)
+orthanc-docker-compose.yml                                  (live)
+backup files/orthanc-cors-proxy.conf.bak-20260830-114426
+backup files/orthanc-cors-proxy.conf.bak-20260830-154028
+backup files/orthanc-cors-proxy.conf.bak-20260901-104751
+backup files/ohif-app-config.js.bak-20260826-131435
+backup files/ohif-app-config.js.bak-20260826-153349
+backup files/README.md.bak-20260830-154028
+backup files/orthanc-docker-compose.yml.before-persistence
+```
+
+**Nine tracked files, not one.** Two of them are old `ohif-app-config.js` backups, meaning
+the credential was once in the **browser-side** config before the same-origin redesign
+moved it server-side. Rotation neutralises all nine at once, which is precisely why it is
+the right remedy rather than deleting files.
+
+Local-only copies, never pushed: `chatbot-neuro/HANDOFF.md` on Server 2 (that repository
+has no remote), plus that machine's search-index cache and assistant transcripts.
+
+#### 4.2.2 Zero-downtime order
+
+Orthanc's `RegisteredUsers` holds a **map**, so old and new credentials can coexist. Adding
+before removing means imaging is never broken, and every step before the last is trivially
+reversible.
+
+1. **Add** the new admin user *and* the dedicated MONAI user (§4.1) alongside the existing
+   one; recreate Orthanc. *Verify:* the old credential still returns 200 and the new one
+   also returns 200.
+2. **Update `orthanc-cors-proxy.conf`** to the new admin credential; reload nginx.
+   *Verify:* `docker exec orthanc-cors-proxy cat /etc/nginx/conf.d/default.conf` shows the
+   new value — the inode trap makes this check mandatory, not optional — and DICOMweb
+   still answers 200 through the proxy.
+3. **Update the imaging module through the OpenMRS UI.** *Verify:* a study opens in OHIF,
+   and **Get studies** reconciles.
+4. **Point MONAI at its own account** (§4.1). *Verify:* it lists studies with its
+   credential and is refused without one.
+5. **Only now remove the old user**; recreate Orthanc. *Verify:* the old credential
+   returns **401**, and steps 2–4 still work.
+
+> After step 5, **Stone Web Viewer and Orthanc Explorer 2** will prompt again: they are
+> served by Orthanc directly and authenticate in the browser, so saved credentials become
+> invalid. Expected, not a fault.
+
+#### 4.2.3 Stop the secret returning to git
+
+Rotation is pointless if the new value is committed. Both live files that carry it are
+tracked, so:
+
+- The new secrets live in the repository-root **`.env`**, which is `0600`, listed in
+  `.gitignore`, **untracked and never pushed** (verified 2026-09-24).
+- `orthanc-docker-compose.yml` references them by variable instead of embedding literals.
+- `orthanc-cors-proxy.conf` is **untracked** and replaced in the repository by a sanitised
+  `.example` template, so the shape stays version-controlled and the secret does not.
+
+> The stronger option, not taken now: render the proxy config from an nginx
+> `envsubst` template, as `server2-stack` does. It keeps the file tracked and injects the
+> header at container start. It is deferred because `NGINX_ENVSUBST_FILTER` must be scoped
+> or nginx's own `$host` and `$remote_addr` are silently blanked — a failure mode worth
+> introducing deliberately, not in the middle of a credential rotation.
+
+Rotation is not complete until a **fresh clone of the public repository** has been checked
+for any remaining live-matching value, by the hash-comparison method `CLAUDE.md` used for
+the 2026-09-07 finding.
 
 ### 4.3 Clinical labels on AI segmentations
 

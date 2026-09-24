@@ -1,3 +1,10 @@
+# EXAMPLE ONLY — the live file is untracked and holds a real credential.
+# Copy to orthanc-cors-proxy.conf and set the Authorization header to the
+# base64 of <user>:<password>, taken from .env (ORTHANC_PROXY_AUTH_B64).
+# The live file is a SINGLE-FILE BIND MOUNT: edit it with `cat new > file`,
+# never `sed -i`, or the container keeps serving the old inode.
+# See ohif-ai-integration.md 4.2.3.
+
 server {
     listen 80;
 
@@ -37,7 +44,7 @@ server {
         # NOTE: this is stock nginx:alpine, so client_max_body_size defaults to 1 MB.
         # That is enough for reads, but OHIF writes segmentations back via STOW-RS
         # POST and will fail until 'client_max_body_size 0;' is added here.
-        proxy_set_header Authorization "Basic b3J0aGFuYzpvcnRoYW5jX2FkbWluX3Bhc3N3b3Jk";
+        proxy_set_header Authorization "Basic __REPLACE_WITH_BASE64_OF_user:password__";
         proxy_pass http://orthanc:8042;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;

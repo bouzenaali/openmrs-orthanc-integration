@@ -32,7 +32,11 @@ services:
       ORTHANC__DICOM_AET: "ORTHANC" # Default AETitle for Orthanc [18]
       ORTHANC__REMOTE_ACCESS_ALLOWED: "true" # Allow web access from outside container (e.g., from OpenMRS container or host)
       ORTHANC__AUTHENTICATION_ENABLED: "true" # Enable basic HTTP authentication
-      ORTHANC__REGISTERED_USERS: '{"orthanc": "orthanc_admin_password"}' # **CHANGE THIS USERNAME AND PASSWORD**
+      # Users come from .env (0600, gitignored). Literals here were published to a
+      # public remote; see ohif-ai-integration.md 2.1. During the rotation the OLD
+      # user is kept alongside the new ones so nothing breaks mid-flight; it is
+      # removed in step 5.
+      ORTHANC__REGISTERED_USERS: '{"${ORTHANC_OLD_USER}": "${ORTHANC_OLD_PASSWORD}", "${ORTHANC_ADMIN_USER}": "${ORTHANC_ADMIN_PASSWORD}", "${ORTHANC_MONAI_USER}": "${ORTHANC_MONAI_PASSWORD}"}'
       # PostgreSQL plugin configuration [15]
       ORTHANC__POSTGRESQL__ENABLE_INDEX: "true" # Enable PostgreSQL for DICOM index
       ORTHANC__POSTGRESQL__ENABLE_STORAGE: "true" # Store DICOM files as large objects in DB (recommended for unified data management)

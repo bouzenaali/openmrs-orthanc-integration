@@ -1,0 +1,40 @@
+.btn-open-popup-sync {
+    background: #009384;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 7px
+}
+
+.btn-open-popup-newStudies {
+    background: #EEA616;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 7px
+}
+
+.btn-open-popup-upload {
+    background: #5B57A6;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 7px
+}
+.popup-box-btn {
+    display: block
+}
+.select-config {
+    margin-bottom: 30px;
+}
+
+.radio-div {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin-top: 18px;
+}

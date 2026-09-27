@@ -1,8 +1,10 @@
 # OHIF-AI — integration with the production PACS
 
 **Project:** openmrs-orthanc-integration — Neurosurgery EMR, CHU Blida
-**Status (2026-09-24):** **PLANNING. Nothing in this document has been deployed.**
-Stage 1 decisions are made (§4); stages 2–5 are designed and not yet built.
+**Status (2026-09-28):** **Stage 1 is DONE and verified; stages 2–5 are designed and not
+yet built.** The credential rotation is complete — the published credential now returns
+401 (§4.2.4). The imaging module ships the OHIF-AI button and the configuration editor
+(1.4.1, deployed). Nothing of OHIF-AI itself is deployed.
 **Companion:** `OHIF-AI.md` — what OHIF-AI is, why it is a second viewer, and the
 evaluation that proved both AI features work. **Read that first.** This document covers
 only what it takes to put it in front of the real PACS.
@@ -78,6 +80,32 @@ top of a defect.
 
 **Decision (2026-09-24): fix it.** MONAI gets a proper authenticated route instead (§4.1).
 
+### 2.3 Tracked configuration turns branch switching into a production change
+
+`orthanc-cors-proxy.conf` and `orthanc-docker-compose.yml` are **live, bind-mounted
+production configuration** and were tracked in git. During this work the branch was
+switched several times, and each switch silently rewrote them:
+
+| Observed | Effect |
+| --- | --- |
+| switch to a branch where the file is tracked with the old credential | the rotated proxy config was **overwritten**, reverting the credential |
+| switch to a branch where the file is untracked | the proxy config was **deleted outright**; the container kept serving an unlinked inode, so nothing appeared wrong until a restart would have failed on a missing bind-mount source |
+| the compose file reverted to literals | the next `docker compose up -d` would have recreated Orthanc **without `pacsadmin`**, taking imaging down |
+| the module source tree, committed on one branch only | **deleted from the working tree** on switching to the other |
+
+`CLAUDE.md` warns that git is not a reliable *restore* path for operational config. The
+inverse is just as dangerous and was not written down: git **will** restore tracked config
+over a running system, without asking.
+
+Resolved 2026-09-28 by making every branch agree: `orthanc-cors-proxy.conf` is ignored
+everywhere (it carries the injected credential; its shape lives in a sanitised
+`.example`), the compose reads its users from `.env` and is committed identically on
+`main`, `develop` and `feature_ohif_ai`, and `*.secret-bak-*` is ignored so that backups
+of credential-bearing files never land in the tracked `backup files/` directory.
+
+> A file that is tracked on one branch and absent on another **will be deleted** when you
+> switch. For live configuration that is a production outage waiting for a `git checkout`.
+
 ---
 
 ## 3. The five stages
@@ -109,8 +137,15 @@ Design, following the idiom `server2-stack` already uses for `clinical-agent`:
    reaches it over the Docker network on port 80 and does not need it published. This
    closes §2.2 on its own.
 2. **Create a dedicated Orthanc account for MONAI**, separate from the admin account, in
-   Orthanc's `RegisteredUsers`. Least privilege: it needs QIDO/WADO read and STOW write,
-   nothing else.
+   Orthanc's `RegisteredUsers`. **Done 2026-09-24; verified 2026-09-28.**
+
+   > **Correction.** This step originally said "least privilege: QIDO/WADO read and STOW
+   > write, nothing else". That is **not achievable this way**. No authorization plugin is
+   > loaded, so `RegisteredUsers` grants every account full administrative rights —
+   > measured: the `monai` account's `DELETE /studies/...` returns **404 (not found)**, not
+   > 403, so it is authorised to delete. Least privilege must therefore be enforced at the
+   > vhost in stage 3, which restricts by path and source address and needs no Orthanc
+   > plugin, exactly as `server2-stack`'s agent vhost already does.
 3. **Publish a DICOMweb vhost for machine clients on NPM**, e.g. `pacs-api.hospital.lan`,
    TLS-terminated, **restricted by source address to Server 2**, proxying to
    `orthanc:8042`. It must *pass through* the caller's credentials — it must **not** inject
@@ -196,6 +231,26 @@ reversible.
    credential and is refused without one.
 5. **Only now remove the old user**; recreate Orthanc. *Verify:* the old credential
    returns **401**, and steps 2–4 still work.
+
+#### 4.2.4 Outcome — VERIFIED 2026-09-28
+
+```
+running Orthanc users      pacsadmin, monai      (old 'orthanc' removed)
+old credential   -> 401    pacsadmin -> 200      monai -> 200   bogus -> 401
+browser path via proxy     -> 200
+imaging module user        pacsadmin
+OpenMRS                    -> 200
+```
+
+**The nine published copies of the old credential are now worthless**, which was the
+point of rotating rather than deleting files. `ORTHANC_OLD_*` remain in `.env` for
+rollback only and can be dropped once this has held for a while.
+
+Step 3 was impossible until the imaging module gained an edit form — the page could only
+add and delete, and deletion is refused once studies reference a configuration. That
+shipped as module **1.4.1**, along with two defects found on first use: the edit path
+called the save-new service method and so tripped the duplicate-URL guard against the
+row being edited, and the edit icon had no CSS rule and rendered at full size.
 
 > After step 5, **Stone Web Viewer and Orthanc Explorer 2** will prompt again: they are
 > served by Orthanc directly and authenticate in the browser, so saved credentials become

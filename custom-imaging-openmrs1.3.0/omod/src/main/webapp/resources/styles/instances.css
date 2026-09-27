@@ -1,0 +1,13 @@
+.preview-form {
+    width: fit-content;
+}
+
+.instance-preview {
+    width: 25px;
+    margin-left: 15px;
+}
+
+.preview-container, .instanceImage {
+    width: 340px;
+    height: 300px
+}

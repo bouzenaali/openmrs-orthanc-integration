@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+        "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+        "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd" >
+
+<hibernate-mapping package="org.openmrs.module.imaging" auto-import="false">
+    <class name="OrthancConfiguration"
+        table="imaging_OrthancConfiguration">
+        <id name="id" type="int" column="id" unsaved-value="0">
+            <generator class="native" />
+        </id>
+        <discriminator column="id" insert="false" />
+        <property name="orthancBaseUrl" type="java.lang.String" column="orthancBaseUrl" length="255" unique="true" />
+        <property name="orthancProxyUrl" type="java.lang.String" column="orthancProxyUrl" length="255" not-null="false"/>
+        <property name="orthancUsername" type="java.lang.String" column="orthancUsername" length="255"/>
+        <property name="orthancPassword" type="java.lang.String" column="orthancPassword" length="255"/>
+        <property name="lastChangedIndex" type="int" column="lastChangedIndex" />
+    </class>
+</hibernate-mapping>

@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Beans to add to the current Application context definition -->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:jee="http://www.springframework.org/schema/jee"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+  		    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+  		    http://www.springframework.org/schema/context
+  		    http://www.springframework.org/schema/context/spring-context-3.0.xsd
+  		    http://www.springframework.org/schema/jee
+  		    http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+  		    http://www.springframework.org/schema/tx
+  		    http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+  		    http://www.springframework.org/schema/aop
+  		    http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+  		    http://www.springframework.org/schema/util
+  		    http://www.springframework.org/schema/util/spring-util-3.0.xsd">
+
+    <context:component-scan base-package="org.openmrs.module.imaging" />
+
+    <!--
+        Manual wiring of sessionFactory property in the Dao classes.
+        Autowiring is very very very slow (>30 minutes) for unknown reasons.
+        This is a known and unsolved problem of the OpenMRS project (check the forums).
+    -->
+
+    <bean id="imaging.OrthancConfigurationDao" class="org.openmrs.module.imaging.api.dao.OrthancConfigurationDao">
+        <property name="sessionFactory" ref="dbSessionFactory"/>
+    </bean>
+
+    <bean id="imaging.DicomStudyDao" class="org.openmrs.module.imaging.api.dao.DicomStudyDao">
+        <property name="sessionFactory" ref="dbSessionFactory"/>
+    </bean>
+
+    <bean id="imaging.RequestProcedureDao" class="org.openmrs.module.imaging.api.dao.RequestProcedureDao">
+        <property name="sessionFactory" ref="dbSessionFactory"/>
+    </bean>
+
+    <bean id="imaging.RequestProcedureStepDao" class="org.openmrs.module.imaging.api.dao.RequestProcedureStepDao">
+        <property name="sessionFactory" ref="dbSessionFactory"/>
+    </bean>
+
+    <!-- Wraps OrthancConfigurationService methods in DB transactions and OpenMRS interceptors,
+which set audit info like dateCreated, changedBy, etc.-->
+    <bean id="imaging.OrthancConfigurationService"
+          class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+        <property name="transactionManager">
+            <ref bean="transactionManager" />
+        </property>
+        <property name="target">
+            <bean class="org.openmrs.module.imaging.api.impl.OrthancConfigurationServiceImpl">
+                <property name="dao" ref="imaging.OrthancConfigurationDao" />
+            </bean>
+        </property>
+        <property name="preInterceptors">
+            <ref bean="serviceInterceptors" />
+        </property>
+        <property name="transactionAttributeSource">
+            <ref bean="transactionAttributeSource" />
+        </property>
+    </bean>
+
+    <!-- Wraps DicomStudyService methods in DB transactions and OpenMRS interceptors,
+which set audit info like dateCreated, changedBy, etc.-->
+    <bean id="imaging.DicomStudyService"
+          class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+        <property name="transactionManager">
+            <ref bean="transactionManager" />
+        </property>
+        <property name="target">
+            <bean class="org.openmrs.module.imaging.api.impl.DicomStudyServiceImpl">
+                <property name="dao" ref="imaging.DicomStudyDao" />
+            </bean>
+        </property>
+        <property name="preInterceptors">
+            <ref bean="serviceInterceptors" />
+        </property>
+        <property name="transactionAttributeSource">
+            <ref bean="transactionAttributeSource" />
+        </property>
+    </bean>
+
+    <!-- Wraps RequestProcedureService methods in DB transactions and OpenMRS interceptors,
+which set audit info like dateCreated, changedBy, etc.-->
+    <bean id="imaging.RequestProcedureService"
+          class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+        <property name="transactionManager">
+            <ref bean="transactionManager" />
+        </property>
+        <property name="target">
+            <bean class="org.openmrs.module.imaging.api.impl.RequestProcedureServiceImpl">
+                <property name="dao" ref="imaging.RequestProcedureDao" />
+            </bean>
+        </property>
+        <property name="preInterceptors">
+            <ref bean="serviceInterceptors" />
+        </property>
+        <property name="transactionAttributeSource">
+            <ref bean="transactionAttributeSource" />
+        </property>
+    </bean>
+
+    <!-- Wraps RequestProcedureStepService methods in DB transactions and OpenMRS interceptors,
+which set audit info like dateCreated, changedBy, etc.-->
+    <bean id="imaging.RequestProcedureStepService"
+          class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+        <property name="transactionManager">
+            <ref bean="transactionManager" />
+        </property>
+        <property name="target">
+            <bean class="org.openmrs.module.imaging.api.impl.RequestProcedureStepServiceImpl">
+                <property name="dao" ref="imaging.RequestProcedureStepDao" />
+            </bean>
+        </property>
+        <property name="preInterceptors">
+            <ref bean="serviceInterceptors" />
+        </property>
+        <property name="transactionAttributeSource">
+            <ref bean="transactionAttributeSource" />
+        </property>
+    </bean>
+
+    <!-- Adds OrthancConfigurationService to OpenMRS context so it can be accessed
+    calling Context.getService(OrthancConfigurationService.class) -->
+    <bean parent="serviceContext">
+        <property name="moduleService">
+            <list>
+                <value>org.openmrs.module.imaging.api.OrthancConfigurationService</value>
+                <ref bean="imaging.OrthancConfigurationService" />
+            </list>
+        </property>
+    </bean>
+
+    <bean parent="serviceContext">
+        <property name="moduleService">
+            <list>
+                <value>org.openmrs.module.imaging.api.DicomStudyService</value>
+                <ref bean="imaging.DicomStudyService" />
+            </list>
+        </property>
+    </bean>
+
+    <bean parent="serviceContext">
+        <property name="moduleService">
+            <list>
+                <value>org.openmrs.module.imaging.api.RequestProcedureService</value>
+                <ref bean="imaging.RequestProcedureService" />
+            </list>
+        </property>
+    </bean>
+
+    <bean parent="serviceContext">
+        <property name="moduleService">
+            <list>
+                <value>org.openmrs.module.imaging.api.RequestProcedureStepService</value>
+                <ref bean="imaging.RequestProcedureStepService" />
+            </list>
+        </property>
+    </bean>
+</beans>

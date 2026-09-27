@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+        "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+        "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd" >
+
+<hibernate-mapping package="org.openmrs.module.imaging.api.worklist" auto-import="false">
+    <class name="RequestProcedureStep"  table="imaging_RequestProcedureStep">
+        <id name="id" type="int" column="id" unsaved-value="0">
+            <generator class="native" />
+        </id>
+        <many-to-one name="requestProcedure" column="requestProcedureId" class="org.openmrs.module.imaging.api.worklist.RequestProcedure" not-null="true"/>
+        <property name="modality" type="java.lang.String" column="modality" length="255" not-null="true"/>
+        <property name="aetTitle" type="java.lang.String" column="aetTitle" length="255" not-null="true"/>
+        <property name="scheduledReferringPhysician" type="java.lang.String" column="scheduledReferringPhysician" length="255" not-null="true"/>
+        <property name="requestedProcedureDescription" type="java.lang.String" column="requestedProcedureDescription" length="255" not-null="true"/>
+        <property name="stepStartDate" type="java.lang.String" column="stepStartDate" length="255" not-null="true"/>
+        <property name="stepStartTime" type="java.lang.String" column="stepStartTime" length="255" not-null="true"/>
+        <property name="stationName" type="java.lang.String" column="stationName" length="255" not-null="false"/>
+        <property name="performedProcedureStepStatus" type="java.lang.String" column="performedProcedureStepStatus" length="255" not-null="true"/>
+        <property name="procedureStepLocation" type="java.lang.String" column="procedureStepLocation" length="255" not-null="false"/>
+    </class>
+</hibernate-mapping>

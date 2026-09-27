@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog/1.9"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog/1.9
+                  http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-1.9.xsd">
+
+    <!--
+    	See http://wiki.openmrs.org/display/docs/Module+liquibase+File for
+    	documentation on this file.
+
+        See http://www.liquibase.org/manual/home#available_database_refactorings
+        for a list of supported elements and attributes
+    -->
+
+    <changeSet id="275" author="weisadre">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="${project.parent.artifactId}_OrthancConfiguration"/>
+            </not>
+        </preConditions>
+        <comment>Create the Configuration table for Orthanc Server</comment>
+        <createTable tableName="${project.parent.artifactId}_OrthancConfiguration">
+            <column autoIncrement="true" name="id" type="int">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="orthancBaseUrl" type="varchar(255)" >
+                <constraints unique="true" />
+            </column>
+            <column name="orthancProxyUrl" type="varchar(255)" >
+                <constraints nullable="true"/>
+            </column>
+            <column name="orthancUsername" type="varchar(255)" />
+            <column name="orthancPassword" type="varchar(255)" />
+            <column name="lastChangedIndex" type="int" />
+        </createTable>
+    </changeSet>
+
+    <changeSet id="276" author="weisadre">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="${project.parent.artifactId}_DicomStudy"/>
+            </not>
+            <tableExists tableName="${project.parent.artifactId}_OrthancConfiguration"/>
+        </preConditions>
+        <comment>Create the DicomStudy table for imaging</comment>
+        <createTable tableName="${project.parent.artifactId}_DicomStudy">
+            <column autoIncrement="true" name="id" type="int">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="studyInstanceUID" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="orthancStudyUID" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="patientName" type="varchar(255)"/>
+            <column name="studyDate" type="varchar(255)"/>
+            <column name="studyTime" type="varchar(255)"/>
+            <column name="patient_id" type="int">
+                <constraints nullable="true"/>
+            </column>
+            <column name="orthancConfigurationId" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="studyDescription" type="varchar(255)"/>
+            <column name="gender" type="varchar(50)"/>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="imaging_DicomStudy" baseColumnNames="patient_id"
+                                 constraintName="imaging_DicomStudy_patient_id_fk" referencedTableName="patient"
+                                 referencedColumnNames="patient_id"/>
+        <addForeignKeyConstraint baseTableName="imaging_DicomStudy" baseColumnNames="orthancConfigurationId"
+                                 constraintName="imaging_DicomStudy_orthancConfigurationId_fk"
+                                 referencedTableName="imaging_OrthancConfiguration"
+                                 referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="300" author="weisadre">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="${project.parent.artifactId}_RequestProcedure"/>
+            </not>
+            <tableExists tableName="${project.parent.artifactId}_OrthancConfiguration"/>
+        </preConditions>
+        <comment>Create the requestProcedure table for imaging</comment>
+        <createTable tableName="${project.parent.artifactId}_RequestProcedure">
+            <column autoIncrement="true" name="id" type="int">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="status" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="patient_id" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="orthancConfigurationId" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="accessionNumber" type="varchar(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="studyInstanceUID" type="varchar(255)">
+                <constraints nullable="true" unique="true"/>
+            </column>
+            <column name="requestingPhysician" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="requestDescription" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="priority" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="imaging_RequestProcedure" baseColumnNames="patient_id"
+                                 constraintName="imaging_RequestProcedure_patient_id_fk" referencedTableName="patient"
+                                 referencedColumnNames="patient_id"/>
+        <addForeignKeyConstraint baseTableName="imaging_RequestProcedure" baseColumnNames="orthancConfigurationId"
+                                 constraintName="imaging_RequestProcedure_orthancConfigurationId_fk"
+                                 referencedTableName="imaging_OrthancConfiguration"
+                                 referencedColumnNames="id"/>
+    </changeSet>
+    <changeSet id="301" author="weisadre">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="${project.parent.artifactId}_RequestProcedureStep"/>
+            </not>
+            <tableExists tableName="${project.parent.artifactId}_RequestProcedure"/>
+        </preConditions>
+        <comment>Create the requestProcedureStep table for imaging</comment>
+        <createTable tableName="${project.parent.artifactId}_RequestProcedureStep">
+            <column autoIncrement="true" name="id" type="int">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="requestProcedureId" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="modality" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="aetTitle" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="scheduledReferringPhysician" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="requestedProcedureDescription" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stepStartDate" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stepStartTime" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stationName" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="performedProcedureStepStatus" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="procedureStepLocation" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="imaging_RequestProcedureStep" baseColumnNames="requestProcedureId"
+                                 constraintName="imaging_RequestProcedureStep_requestProcedureId_fk"
+                                 referencedTableName="imaging_RequestProcedure"
+                                 referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="302" author="imaging-module">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="${project.parent.artifactId}_DicomStudy"/>
+            <not>
+                <columnExists tableName="${project.parent.artifactId}_DicomStudy" columnName="dicomPatientId"/>
+            </not>
+        </preConditions>
+        <comment>
+            Add dicomPatientId (DICOM PatientID, tag 0010,0020) and patientBirthDate (DICOM
+            PatientBirthDate, tag 0010,0030) to imaging_DicomStudy. These support a stronger,
+            identifier-based patient-match score alongside the existing name-only fuzzy match, to
+            reduce the risk of assigning a study to the wrong patient.
+        </comment>
+        <addColumn tableName="${project.parent.artifactId}_DicomStudy">
+            <column name="dicomPatientId" type="varchar(255)"/>
+            <column name="patientBirthDate" type="varchar(255)"/>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

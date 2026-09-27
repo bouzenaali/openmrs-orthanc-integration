@@ -18,7 +18,9 @@ services:
       retries: 5
 
   orthanc:
-    image: orthancteam/orthanc:latest # Recommended ARM64 compatible image
+    # Pinned 2026-09-24 to the image already running (orthancteam/orthanc 26.04, built 2026-06-24).
+    # Was :latest, so any `docker compose pull` could silently upgrade the PACS. Upgrade deliberately.
+    image: orthancteam/orthanc@sha256:83a1f988c9790a8ec018d00bad2d23d29703313e10ec59ecbeb827b5fa8e0aee
     container_name: orthanc-pacs
     restart: always
     ports:
@@ -36,7 +38,7 @@ services:
       # public remote; see ohif-ai-integration.md 2.1. During the rotation the OLD
       # user is kept alongside the new ones so nothing breaks mid-flight; it is
       # removed in step 5.
-      ORTHANC__REGISTERED_USERS: '{"${ORTHANC_OLD_USER}": "${ORTHANC_OLD_PASSWORD}", "${ORTHANC_ADMIN_USER}": "${ORTHANC_ADMIN_PASSWORD}", "${ORTHANC_MONAI_USER}": "${ORTHANC_MONAI_PASSWORD}"}'
+      ORTHANC__REGISTERED_USERS: '{"${ORTHANC_ADMIN_USER}": "${ORTHANC_ADMIN_PASSWORD}", "${ORTHANC_MONAI_USER}": "${ORTHANC_MONAI_PASSWORD}"}'
       # PostgreSQL plugin configuration [15]
       ORTHANC__POSTGRESQL__ENABLE_INDEX: "true" # Enable PostgreSQL for DICOM index
       ORTHANC__POSTGRESQL__ENABLE_STORAGE: "true" # Store DICOM files as large objects in DB (recommended for unified data management)

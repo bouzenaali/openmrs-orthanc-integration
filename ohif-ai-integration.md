@@ -1,8 +1,9 @@
 # OHIF-AI — integration with the production PACS
 
 **Project:** openmrs-orthanc-integration — Neurosurgery EMR, CHU Blida
-**Status (2026-09-29):** **Stages 1 and 2 are DONE and verified; stages 3–5 are designed
-and not yet built.** The credential rotation is complete — the published credential now returns
+**Status (2026-09-29):** **Stages 1–3 are DONE; stages 4–5 are designed and not yet
+built.** Stage 3 is written and validated but **not started** — `monai_server` still runs
+in the evaluation stack. The credential rotation is complete — the published credential now returns
 401 (§4.2.4). The imaging module ships the OHIF-AI button and the configuration editor
 (1.4.1, deployed). Nothing of OHIF-AI itself is deployed.
 **Companion:** `OHIF-AI.md` — what OHIF-AI is, why it is a second viewer, and the
@@ -114,7 +115,7 @@ of credential-bearing files never land in the tracked `backup files/` directory.
 | --- | --- | --- |
 | **1** | Prerequisites and decisions — auth route, credential rotation, labelling, privilege | — |
 | **2** | Production images: carry the patches, bake the viewer config | **DONE 2026-09-29** — built, not deployed |
-| **3** | Expose `monai_server` from Server 2, properly | no |
+| **3** | Expose `monai_server` from Server 2, properly | **DONE 2026-09-29** — written and validated, not started |
 | **4** | One origin on Server 1: `ai-viewer.hospital.lan` | yes |
 | **5** | Verification | — |
 
@@ -422,19 +423,76 @@ cross-origin is expected, so that header is **not** reproduced.
 
 ## 6. Stage 3 — expose MONAI from Server 2
 
-Follow `server2-stack/README.md` §"Adding another service later" — the mechanism is
-already documented and proven by `clinical-agent`:
+**DONE 2026-09-29 — written and validated, deliberately not started.** It follows
+`server2-stack/README.md` §"Adding another service later": one overlay plus one vhost
+template, with nothing in the base files changed.
 
-- **An overlay** `docker-compose.monai.yml`, with `expose:` and **never `ports:`**. A
-  published port bypasses everything the proxy enforces.
-- **A vhost template** modelled on `agent.conf.template`: TLS, an IP allowlist restricted
-  to Server 1, a rate limit, and `return 404` outside the endpoints it means to expose.
-- Extend `NGINX_ENVSUBST_FILTER` to cover the new variables, or nginx's own `$host` and
-  `$remote_addr` get silently blanked.
-- `client_max_body_size` large enough for SEG writes.
+| File | What it does |
+| --- | --- |
+| `docker-compose.monai.yml` | defines `monai_server` with `expose:` and **never `ports:`**, a pinned image, the GPU reservation, and the `MONAI_` additions to `NGINX_ENVSUBST_FILTER` |
+| `nginx/templates-monai/monai.conf.template` | the vhost: TLS, allowlisted to Server 1, rate-limited, and a **path allowlist** |
+| `nginx/nginx.conf` | adds the `monai_infer` rate-limit zone |
 
-`monai_server` keeps its attachment to `server2_net` for vLLM, and **must keep `default`
-listed alongside it** (`OHIF-AI.md` §10.2).
+### 6.1 The path allowlist, and why it is the real least-privilege control
+
+§4.1 promised MONAI least privilege and could not deliver it in Orthanc — no
+authorization plugin, so the `monai` account has full rights there. **This vhost is where
+that promise is actually kept**, by restricting paths and source address instead. It needs
+no Orthanc plugin.
+
+The allowlist is not guesswork. It is what the viewer actually requested across the entire
+evaluation:
+
+```
+112  POST /infer/segmentation
+ 14  POST /nninter/session/        (+ .../<token>/release)
+  1  GET  /info/
+```
+
+Nothing else was ever used, so nothing else is exposed. That matters because MONAI Label
+also serves `/datastore/...` and **`/train/`** — a browser being able to start model
+training on the hospital's GPU is not a theoretical concern, and `return 404` costs
+nothing.
+
+### 6.2 Two things the vhost gets right that are easy to get wrong
+
+**NPM must strip the `/monai` prefix.** The browser calls
+`https://ai-viewer.hospital.lan/monai/infer/segmentation`, but MONAI Label serves
+`/infer/segmentation`. NPM's `proxy_pass` needs its trailing slash. Without it every
+request lands in the catch-all and returns 404 — which looks exactly like the allowlist
+being wrong.
+
+**The rate limit is effectively global, not per clinician.** Every request arrives from
+NPM, so they all share one `$binary_remote_addr`. It is set high and is a runaway-client
+guard; the GPU lock does the real serialising.
+
+### 6.3 Validated by
+
+```
+docker compose ... -f docker-compose.monai.yml config     parses
+monai_server resolves: image pinned, expose 8002, ports none, server2_net
+  VLLM_BASE_URL  http://vllm:8000/v1        (vLLM publishes no host port)
+  DICOMWEB_USER/PASSWORD set from .env      (the dedicated monai account)
+  --studies      https://pacs-api.hospital.lan/dicom-web
+rendered vhost: server_name, allow 10.0.211.249/32 + deny all, 512m, 600s,
+  /infer/ /nninter/ /info/, catch-all 404, plain HTTP -> 444
+nginx -t        syntax is ok, test is successful
+unsubstituted ${...} remaining: 0
+```
+
+### 6.4 Before this can be started
+
+1. **Re-issue the TLS certificate.** It currently covers `agent.hospital.lan` and
+   `stt.hospital.lan` only. `certs/agent-san.cnf` now lists `monai.hospital.lan`, but the
+   certificate itself has **not** been re-issued — TLS will fail for that name until it is.
+   Note also that `certs/` is gitignored, so that CSR change is on disk and **not**
+   version-controlled.
+2. **DNS** for `monai.hospital.lan`, resolvable from Server 1.
+3. **`pacs-api.hospital.lan` must exist** (§4.1) — `--studies` points at it, and it is
+   created in stage 4 on Server 1.
+4. **Retire the evaluation `monai_server`.** Both define the same container name, so they
+   cannot run together. Starting this overlay means the evaluation stack stops being the
+   thing serving MONAI.
 
 ---
 

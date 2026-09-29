@@ -1,8 +1,9 @@
 # OHIF-AI — integration with the production PACS
 
 **Project:** openmrs-orthanc-integration — Neurosurgery EMR, CHU Blida
-**Status (2026-09-29):** **Stages 1–3 are DONE; stages 4–5 are designed and not yet
-built.** Stage 3 is written and validated but **not started** — `monai_server` still runs
+**Status (2026-09-29):** **Stages 1–3 are DONE; stage 4 is PART DONE.** The Server 1 side
+is built (viewer container, certificate) and the remaining steps need the NPM UI, DNS and
+the OpenMRS UI — see §7.1. Stage 3 is written and validated but **not started** — `monai_server` still runs
 in the evaluation stack. The credential rotation is complete — the published credential now returns
 401 (§4.2.4). The imaging module ships the OHIF-AI button and the configuration editor
 (1.4.1, deployed). Nothing of OHIF-AI itself is deployed.
@@ -116,7 +117,7 @@ of credential-bearing files never land in the tracked `backup files/` directory.
 | **1** | Prerequisites and decisions — auth route, credential rotation, labelling, privilege | — |
 | **2** | Production images: carry the patches, bake the viewer config | **DONE 2026-09-29** — built, not deployed |
 | **3** | Expose `monai_server` from Server 2, properly | **DONE 2026-09-29** — written and validated, not started |
-| **4** | One origin on Server 1: `ai-viewer.hospital.lan` | yes |
+| **4** | One origin on Server 1: `ai-viewer.hospital.lan` | **PART DONE 2026-09-29** — §7.1 |
 | **5** | Verification | — |
 
 Stage 2 is build work with nothing at stake and can start while stage 1 is settled.
@@ -506,7 +507,27 @@ https://ai-viewer.hospital.lan            NPM on Server 1, TLS terminated here
   └── /monai/      → Server 2, via server2-proxy (TLS, allowlisted)
 ```
 
-Checklist, each item a known trap in this stack:
+### 7.1 Progress — 2026-09-29
+
+**Done, and none of it touches the three live proxy hosts:**
+
+| | |
+| --- | --- |
+| Certificate for the new names | `certificates/aiviewer.crt` — `ai-viewer.hospital.lan` + `pacs-api.hospital.lan`, signed by `hospitalCA`, verified to chain. A **separate** certificate: all three existing hosts share `npm-3`, and extending that would have put OpenMRS, Orthanc and the viewer at risk for the sake of two new names. |
+| Server 2 certificate re-issued | now covers `agent`, `stt` **and** `monai`. Generated from the **existing private key**, so the old certificate stays valid and rollback is restoring one file. Installed, inode preserved, `nginx -t` passes — **but nginx has not been reloaded**, so it is still serving the old certificate. Harmless: the new one is a superset. |
+| `ohif-ai-viewer` container | running on Server 1 from `webapp:prod`, **no published port**, NPM reaches it by name: `HTTP 200`, `qidoRoot:"/dicom-web"`. |
+| `ohif-ai-docker-compose.yml` | added. |
+
+**A trap found on the way.** `server2-stack/1-make-agent-csr.sh` regenerates
+`agent-san.cnf` from a heredoc listing only `$AGENT_HOSTNAME`, `localhost` and the IPs —
+**no `stt`, no `monai`**. The working file was hand-edited after that script last ran, so
+re-running it would silently produce a certificate that breaks the STT vhost. The CSR here
+was made by hand from the existing key for that reason. The script should be fixed before
+anyone trusts it again.
+
+### 7.2 Checklist
+
+Each item a known trap in this stack:
 
 - **Internal ports in NPM** — `ohif-ai-viewer` is **80**, `orthanc-cors-proxy` is **80**.
   Using the published port gives `502`.

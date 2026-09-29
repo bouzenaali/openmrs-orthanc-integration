@@ -1,8 +1,8 @@
 # OHIF-AI — integration with the production PACS
 
 **Project:** openmrs-orthanc-integration — Neurosurgery EMR, CHU Blida
-**Status (2026-09-28):** **Stage 1 is DONE and verified; stages 2–5 are designed and not
-yet built.** The credential rotation is complete — the published credential now returns
+**Status (2026-09-29):** **Stages 1 and 2 are DONE and verified; stages 3–5 are designed
+and not yet built.** The credential rotation is complete — the published credential now returns
 401 (§4.2.4). The imaging module ships the OHIF-AI button and the configuration editor
 (1.4.1, deployed). Nothing of OHIF-AI itself is deployed.
 **Companion:** `OHIF-AI.md` — what OHIF-AI is, why it is a second viewer, and the
@@ -113,7 +113,7 @@ of credential-bearing files never land in the tracked `backup files/` directory.
 | Stage | What | Deployed? |
 | --- | --- | --- |
 | **1** | Prerequisites and decisions — auth route, credential rotation, labelling, privilege | — |
-| **2** | Production images: carry the patches, bake the viewer config | no |
+| **2** | Production images: carry the patches, bake the viewer config | **DONE 2026-09-29** — built, not deployed |
 | **3** | Expose `monai_server` from Server 2, properly | no |
 | **4** | One origin on Server 1: `ai-viewer.hospital.lan` | yes |
 | **5** | Verification | — |
@@ -327,12 +327,28 @@ The evaluation applies three fixes by **bind-mounting** files over the image
 
 **These must be baked into the production image.** A rebuild silently discards them while
 the bind-mount keeps them looking present — the single most likely way this deployment
-breaks months from now. Verify after building:
+breaks months from now.
 
-```bash
-docker run --rm --entrypoint sh monai -c \
-  "grep -c 'Slice range too wide' /code/monailabel/tasks/infer/basic_infer.py"   # expect 1
+**DONE and VERIFIED 2026-09-29.** The Dockerfile's `COPY ./monai-label/. ./` picks the
+patched sources up, so a rebuild bakes them in. Confirmed against the image with no mounts
+attached, then both bind-mounts were removed from the compose file and `monai_server`
+recreated from the image alone:
+
 ```
+slice-range guard        : 1
+vllm_max_tokens 1536     : 1
+OpenAI api_key fix       : present
+broken raises remaining  : 0      <- all 21 fixed
+endpoint returns 400     : 1
+patch bind-mounts        : 0
+```
+
+Then the behaviour itself, replaying the request that first failed — an unbounded slice
+range now returns **HTTP 400** with the actionable message, from the image, with nothing
+mounted over it.
+
+> The image is the only source of truth for these fixes now. That is the point: a mount
+> that silently stops being applied is worse than no mount.
 
 ### 5.2 Bake the viewer's data source
 
@@ -341,12 +357,66 @@ docker run --rm --entrypoint sh monai -c \
 PACS therefore means a config file and a **rebuild** (~4 minutes).
 
 The config must use **same-origin paths** (`/dicom-web`, `/wado`), and the bundled-Orthanc
-`/pacs/` route must go. Verify:
+`/pacs/` route must go.
+
+**DONE and VERIFIED 2026-09-29.** `APP_CONFIG` is now a build **ARG** with its previous
+value as the default, so the evaluation image builds exactly as before and the production
+image is a separate tag:
 
 ```bash
-docker run --rm --entrypoint sh webapp -c "grep -o 'dicom-web' /var/www/html/app-config.js"
-docker run --rm --entrypoint sh webapp -c "du -sh /var/www/html"    # expect ~213 MB
+docker build --build-arg APP_CONFIG=config/chu-production.js -t webapp:prod \
+  -f Viewers/platform/app/.recipes/Nginx-Orthanc/dockerfile Viewers/
 ```
+
+`Viewers/platform/app/public/config/chu-production.js` uses **relative** paths, so no
+hostname is baked into the image and the same build works whatever the host is called:
+
+| | `webapp:prod` | `webapp:latest` (evaluation) |
+| --- | --- | --- |
+| `qidoRoot` / `wadoRoot` | `/dicom-web` | `/pacs/dicom-web` |
+| `wadoUriRoot` | `/wado` | `/wado` |
+| `/pacs/` occurrences | **0** | 1 |
+| bundles | 213 MB | 213 MB |
+
+`dicomUploadEnabled` is **false** in the production config, deliberately: studies reach
+the PACS through the OpenMRS imaging module, which records who uploaded what. A
+drag-and-drop route into a clinical PACS from a viewer bypasses that.
+
+### 5.3 Getting the viewer image onto Server 1
+
+The viewer runs on Server 1 (§3) but is **built on Server 2** — Server 1 has 7 GB of RAM
+shared with OpenMRS, MySQL, Orthanc and NPM, and an OHIF webpack build is not a good
+neighbour. There is no registry, so the image is streamed directly:
+
+```bash
+ssh <server2> 'docker save webapp:prod | gzip -1' | docker load    # ~11 s on this LAN
+```
+
+### 5.4 The viewer's own nginx config
+
+The image's final stage is `FROM nginx:alpine`, and the upstream recipe supplies the
+nginx config by bind-mount rather than baking it. **Without one the container serves
+nginx's default root, not the viewer.** `ohif-ai-viewer.conf` in the repository root is
+that file: it serves the bundles and nothing else, since NPM does the routing.
+
+It is a **single-file bind mount**, so it carries the same inode trap as
+`orthanc-cors-proxy.conf`: change it with `cat new > file`, never `sed -i`, and verify
+with `docker exec`.
+
+Verified 2026-09-29 by running the image with that config on a spare port:
+
+```
+/                 HTTP 200 text/html
+/app-config.js    HTTP 200, qidoRoot:"/dicom-web"
+SPA fallback      HTTP 200      (unknown paths are client-side routes)
+/sw.js            Cache-Control: no-cache
+gzip              1056 -> 635 bytes
+nginx errors      0
+```
+
+One deviation from the recipe: it sets `Access-Control-Allow-Origin: *`, which it needs
+because it serves DICOM from a different path. In the same-origin design nothing
+cross-origin is expected, so that header is **not** reproduced.
 
 ---
 

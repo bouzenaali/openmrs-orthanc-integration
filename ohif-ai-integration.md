@@ -525,7 +525,63 @@ re-running it would silently produce a certificate that breaks the STT vhost. Th
 was made by hand from the existing key for that reason. The script should be fixed before
 anyone trusts it again.
 
-### 7.2 Checklist
+### 7.2 Progress — 2026-09-30
+
+DNS, the NPM hosts and the OpenMRS global property were done by the maintainer. The
+Server 2 half is now **live**:
+
+| | |
+| --- | --- |
+| `pacs-api.hospital.lan` | **200** with the `monai` credential, **401** without. Credentials are passed through, not injected — the opposite of the port-8043 defect (§2.2). |
+| MONAI overlay | started; `monai_server` now belongs to **server2-stack**, on `server2_net`, and the evaluation container is retired |
+| `monai.conf` | loaded by `server2-proxy` |
+| MONAI datastore | `Init Datastore for: https://pacs-api.hospital.lan/dicom-web` — the production PACS, authenticated, no 401s |
+
+**The path allowlist works, measured from Server 1:**
+
+```
+/info/            200
+/train/           404      <- a browser cannot start GPU training
+/datastore/label  404
+/docs             404
+plain HTTP        connection closed (return 444)
+```
+
+#### Still broken: the ai-viewer proxy host
+
+`4.conf` does not exist. The host is present and enabled in NPM's database with the
+correct `http` → `ohif-ai-viewer:80`, but nginx rejected the generated config, so NPM
+deleted it and reloaded without it. TLS therefore answers `unrecognized name`.
+
+The cause is the `/monai/` **Advanced** block: it contains `proxy_pass`, and **NPM already
+emits its own `proxy_pass` for a custom location**. Two in one block is
+`nginx: [emerg] "proxy_pass" directive is duplicate`, which fails the whole file.
+
+Strip the prefix with a `rewrite` instead, and leave the location's own forward
+fields (https / monai.hospital.lan / 443) to generate the `proxy_pass`:
+
+```nginx
+rewrite ^/monai/(.*)$ /$1 break;
+proxy_ssl_server_name on;
+proxy_set_header Host monai.hospital.lan;
+```
+
+> Worth remembering beyond this instance: a custom location's Advanced box is *inside* the
+> generated `location`, so anything NPM already emits must not be repeated there. And the
+> failure is silent from the outside — the host simply stops existing, and the symptom is a
+> TLS name error rather than anything pointing at the directive.
+
+#### `client_max_body_size`
+
+Left at NPM's global **2000m**. A DICOM SEG is tens of megabytes, and the only mechanism
+available without the UI applies to *every* proxy host, so setting `0` would remove the cap
+for OpenMRS uploads to solve a problem that is not occurring.
+
+#### Block Common Exploits
+
+Already disabled on hosts 3, 4 and 5 — the DICOMweb-carrying ones. Nothing to change.
+
+### 7.3 Checklist
 
 Each item a known trap in this stack:
 

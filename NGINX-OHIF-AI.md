@@ -300,3 +300,104 @@ risk to add two names.
 | **Port 8043 is still published to the LAN** and still injects admin credentials. | Anything on the hospital network can read and write the PACS unauthenticated. NPM does not need that port — it reaches the proxy over the Docker network on 80. Closing it is a one-line change to `ohif-docker-compose.yml`. |
 | **`Task: Use AI Imaging Viewer` is assigned to no role.** | Only superusers, who bypass privilege checks, can see the button. |
 | **`stt-engine` is stopped.** | Dictation unavailable; stopped during GPU testing and not yet restarted. |
+
+---
+
+## 11. Where the computation actually happens
+
+This matters more than it looks: **the AI runs on Server 2's GPU, but the *viewing* runs on
+the GPU of whatever machine the clinician is sitting at.** A workstation that cannot do
+WebGL2 shows a black viewport even though every server is healthy.
+
+| Step | Runs on | Needs |
+| --- | --- | --- |
+| Study list, thumbnails, window/level, zoom, pan, scroll | **the clinician's browser** | WebGL2 + a working GPU render node |
+| Decoding pixel data (compressed transfer syntaxes) | **the clinician's browser** | WASM codecs, CPU |
+| **MPR / axial / dual view — building a 3D volume from slices** | **the clinician's browser** | WebGL2, VRAM ∝ volume size, **and per-slice 3D geometry in the DICOM** |
+| Measurements, annotations, segmentation brush | **the clinician's browser** | WebGL2 |
+| DICOM storage, QIDO / WADO / STOW, index queries | **Server 1 CPU** (Orthanc) | no GPU at all |
+| Credential injection, TLS, routing | **Server 1 CPU** (nginx ×3) | trivial |
+| **AI segmentation** — nnInteractive, SAM2, MedSAM2, VoxTell | **Server 2 GPU** | the RTX 5070 Ti |
+| **Report generation** — MedGemma 1.5 | **Server 2 GPU** (vLLM) | the RTX 5070 Ti |
+| Fetching the series to segment, and writing the SEG back | **Server 2 CPU**, pulling from Server 1 | the `pacs-api` route |
+
+> **Neither server renders images for anybody.** Server 1 has no GPU render node at all
+> (`/dev/dri` has no `renderD128`; the Matrox G200eW3 is a BMC display chip). Server 2 has
+> one, but it is there for inference, not for looking at pictures.
+>
+> **So the viewer must be opened from a clinical workstation, not from a server's desktop.**
+> Browsing from Server 1 means software rendering (llvmpipe): minutes to load, or black.
+
+---
+
+## 12. Black viewports and slow loading — diagnosed 2026-09-30
+
+Three independent causes were found, **none of them in the proxy chain**. Metadata comes
+back through the full chain in 0.05–0.24 s, so the network is not the problem.
+
+### 12.1 The study has no 3D geometry, so MPR can never work
+
+Study `1.2.826.0.1.3680043.8.853.2.1116259` ("IRM CEREBRALE", 80 instances):
+
+```
+SOPClassUID              1.2.840.10008.5.1.4.1.1.7    <- Secondary Capture, not MR Image
+SeriesDescription        "AW electronic film"          <- a GE workstation film sheet
+ImagePositionPatient     absent on all 20 sampled instances
+ImageOrientationPatient  absent on all 20 sampled instances
+SliceThickness           absent
+SpacingBetweenSlices     absent
+```
+
+A volume is built from **where each slice sits in space**. Without
+`ImagePositionPatient` and `ImageOrientationPatient` there is no geometry, so no volume, so
+**MPR, axial and dual-view viewports are black by necessity** — in OHIF, OHIF-AI, or any
+other viewer. This is a property of the data, not of the deployment.
+
+"AW electronic film" is a screenshot of a workstation layout: a picture of images, not the
+acquisition. The original MR series — the one with geometry — is what supports MPR. If it
+was never sent to the PACS, no viewer can reconstruct it.
+
+> This also means **nnInteractive cannot segment such a series usefully**: it is a 3D model,
+> and there is no third dimension here.
+
+`OHIF-Integration-Architecture.md` already carried the shorter version of this advice:
+*prefer `/viewer` (stack) over `/segmentation` (volume)*.
+
+### 12.2 Server 1 cannot render at all
+
+```
+/dev/dri:  by-path  card1       <- no renderD128, i.e. no render node
+GPU:       Matrox G200eW3       <- BMC display chip, no 3D
+```
+
+Firefox on Server 1 falls back to software rendering. For a 42.5 MB series that is minutes,
+or a blank viewport. **Expected, documented, and not fixable on that machine** — it is a
+server, not a display.
+
+### 12.3 Server 2 renders, but the desktop is being viewed remotely
+
+Server 2 does have a render node (`renderD128`) and 4.4 GB of free VRAM. But it runs a
+**Wayland** session reached over **RustDesk**, and hardware-accelerated WebGL surfaces are
+a well-known weak point for remote-desktop capture: the page chrome draws fine while the
+accelerated canvas comes through black.
+
+Not proven here — it needs a comparison that only someone at the machine can make. To test,
+open the same study **at Server 2's physical console** and compare with the RustDesk
+session. If the console renders and RustDesk does not, that is the cause.
+
+### 12.4 What to check in Firefox
+
+`about:support` → the **Graphics** section:
+
+- `WEBGL2_RENDERER` — if it says `llvmpipe` or `softpipe`, rendering is on the CPU and slow
+  or black viewports are expected.
+- `Compositing` — `WebRender` (GPU) versus `WebRender (Software)`.
+- WebGPU is **not** required; OHIF uses WebGL2.
+
+### 12.5 The short version
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| MPR / axial / dual view black | the series has no 3D geometry (§12.1) | use a real acquisition series, not "electronic film" |
+| Slow or black on Server 1 | no GPU render node (§12.2) | do not view from a server — use a clinical workstation |
+| Black on Server 2's remote desktop | probably WebGL over RustDesk (§12.3) | compare at the physical console |

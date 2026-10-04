@@ -613,6 +613,65 @@ Nothing is "done" until these pass:
 6. **`~/nginx-proxy-manager/data/logs/proxy-host-<n>_access.log`** shows the real status
    codes. It is the authoritative evidence, not what the browser appeared to do.
 
+### 8.1 Results — 2026-10-04
+
+| # | Check | Result |
+| --- | --- | --- |
+| 1 | No password prompt | **PASS** — no `WWW-Authenticate`, and the client sends **zero** `Authorization` headers |
+| 2 | Segment and save into the production PACS | **not yet** — needs a browser (§8.3) |
+| 3 | Report generation on a bounded slice range | **PASS** — HTTP 200 in **4.8 s** on a real MR series |
+| 4 | MONAI's PACS access works, and fails without credentials | **PASS** — 200 as the `monai` account, 401 without |
+| 5 | Port 8043 unreachable from the LAN | **still open** — see §10 |
+| 6 | Access log shows the real codes | **PASS** — only the deliberate allowlist 404s |
+
+The report, through the whole chain and on a real study, was:
+
+> *"There are multiple ill-defined, hyperintense lesions in the periventricular white
+> matter on the left side. The lesions appear to be centered around the lateral ventricles,
+> extending to the subcortical white matter."*
+
+A plausible FLAIR reading. Clinical accuracy is a separate question this document does not
+answer — what is proven is that the path works end to end on production data.
+
+### 8.2 Three faults only an end-to-end test could find
+
+Each presented as a bare HTTP 500 naming nothing, and each was mine:
+
+1. **MONAI did not trust `hospitalCA`.** `--studies` points at a TLS endpoint signed by the
+   hospital's private CA, and the image ships only public roots, so every fetch died in
+   `requests.exceptions.SSLError`. Fixed with a bundle that is **certifi's plus
+   hospitalCA** — not hospitalCA alone, because nnInteractive and VoxTell fetch weights
+   from Hugging Face.
+2. **The credential variables were the wrong names, twice.** MONAI Label reads settings
+   with a `MONAI_LABEL_` prefix, so a bare `DICOMWEB_USERNAME` is silently ignored. And
+   `config.py` marks `MONAI_LABEL_DICOMWEB_*` deprecated in favour of `..._DATASTORE_*`,
+   while `interfaces/app.py` still reads **DICOMWEB** — so following the documented name
+   also yields a silent 401. Both pairs are now set.
+3. **The datastore filtered to CT only.** Upstream defaults
+   `MONAI_LABEL_DICOMWEB_SEARCH_FILTER` to `{"Modality": "CT"}`, which hides every MR study
+   from a neurosurgery department that works mostly in MR.
+
+> The common thread: a misconfigured credential or trust store surfaces as `500`, never as
+> "401 from the PACS". When inference fails, read `docker logs monai_server` — the HTTP
+> status tells you nothing.
+
+### 8.3 What still needs a human
+
+**Segment a study in the browser and save it**, then confirm the SEG lands in the
+production Orthanc and is visible from the **existing** viewer. That round-trip was proven
+against the evaluation PACS (`OHIF-AI.md` §5.2) and must be proven again here.
+
+**Use the right study.** Of the two in the PACS, one (`…1116259`, "IRM CEREBRALE") contains
+only an "AW electronic film" secondary-capture series with **no 3D geometry at all** —
+MPR, axial and dual views are black by necessity, and nnInteractive cannot work on it. The
+other (`…1449903`) has twenty-odd real MR series with full geometry, including `3D T1 GADO`
+(268 instances) and `Ax T2 FLAIR` (34). Use that one. The rendering diagnosis is in
+`NGINX-OHIF-AI.md` §12.
+
+**Not from a server desktop.** Server 1 has no GPU render node at all, so Firefox there
+falls back to software rendering. See `NGINX-OHIF-AI.md` §11 for which machine does which
+computation.
+
 ---
 
 ## 9. Operating constraints, measured

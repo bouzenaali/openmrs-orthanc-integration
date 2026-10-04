@@ -297,7 +297,7 @@ risk to add two names.
 | Gap | Consequence |
 | --- | --- |
 | **`pacs-api` has no source restriction.** §4.1 called for it to be limited to Server 2; it is not. | Any host on the LAN can reach it, but it **passes credentials through rather than injecting them**, so an unauthenticated request gets 401. It is not a bypass — unlike port 8043 — but the defence-in-depth layer is missing. |
-| **Port 8043 is still published to the LAN** and still injects admin credentials. | Anything on the hospital network can read and write the PACS unauthenticated. NPM does not need that port — it reaches the proxy over the Docker network on 80. Closing it is a one-line change to `ohif-docker-compose.yml`. |
+| ~~Port 8043 published to the LAN~~ | **CLOSED 2026-10-04.** `orthanc-cors-proxy` publishes nothing; verified unreachable from Server 2 while both viewers still answer 200. |
 | **`Task: Use AI Imaging Viewer` is assigned to no role.** | Only superusers, who bypass privilege checks, can see the button. |
 | **`stt-engine` is stopped.** | Dictation unavailable; stopped during GPU testing and not yet restarted. |
 

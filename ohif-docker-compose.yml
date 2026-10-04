@@ -16,9 +16,12 @@
 # for OHIF - same-origin requests never trigger a preflight - and are retained only
 # for direct access over http://localhost:3000.
 #
-# The published ports below are for host access only. Nginx Proxy Manager connects
-# over the Docker network and must target the INTERNAL ports (both are 80, not
-# 3000/8043); using the published port yields 502 Bad Gateway.
+# Nginx Proxy Manager connects over the Docker network and must target the INTERNAL
+# ports (both are 80, not 3000/8043); using a published port yields 502 Bad Gateway.
+#
+# orthanc-cors-proxy publishes NOTHING as of 2026-10-04 - it injects admin
+# credentials, so a published port was an unauthenticated route into the PACS for
+# the whole LAN.
 #
 # Run alongside the other two compose files:
 #   docker compose -f openmrs-docker-compose.yml -f orthanc-docker-compose.yml -f ohif-docker-compose.yml up -d
@@ -28,8 +31,14 @@ services:
     image: nginx:alpine
     container_name: orthanc-cors-proxy
     restart: always
-    ports:
-      - "8043:80"
+    # NO "ports:" ON PURPOSE. This container INJECTS admin credentials into every
+    # request it forwards, so a published port is an authentication bypass: until
+    # 2026-10-04 anything on the hospital LAN could read and write the PACS through
+    # 8043 without presenting any credential of its own. NPM reaches it over the
+    # Docker network on port 80 and never needed the published port.
+    # See ohif-ai-integration.md 2.2.
+    expose:
+      - "80"
     volumes:
       - ./orthanc-cors-proxy.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:

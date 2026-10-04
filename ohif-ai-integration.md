@@ -1,9 +1,10 @@
 # OHIF-AI — integration with the production PACS
 
 **Project:** openmrs-orthanc-integration — Neurosurgery EMR, CHU Blida
-**Status (2026-09-29):** **Stages 1–3 are DONE; stage 4 is PART DONE.** The Server 1 side
-is built (viewer container, certificate) and the remaining steps need the NPM UI, DNS and
-the OpenMRS UI — see §7.1. Stage 3 is written and validated but **not started** — `monai_server` still runs
+**Status (2026-10-04):** **ALL FIVE STAGES COMPLETE AND VERIFIED IN PRODUCTION.** Both AI
+features work against the real PACS, segmentations round-trip into it and are visible from
+the existing viewer, and the §2.2 authentication bypass is closed. Remaining work is
+clinical and operational, not architectural — §10. Stage 3 is written and validated but **not started** — `monai_server` still runs
 in the evaluation stack. The credential rotation is complete — the published credential now returns
 401 (§4.2.4). The imaging module ships the OHIF-AI button and the configuration editor
 (1.4.1, deployed). Nothing of OHIF-AI itself is deployed.
@@ -618,10 +619,10 @@ Nothing is "done" until these pass:
 | # | Check | Result |
 | --- | --- | --- |
 | 1 | No password prompt | **PASS** — no `WWW-Authenticate`, and the client sends **zero** `Authorization` headers |
-| 2 | Segment and save into the production PACS | **not yet** — needs a browser (§8.3) |
+| 2 | Segment and save into the production PACS | **PASS** — see §8.4 |
 | 3 | Report generation on a bounded slice range | **PASS** — HTTP 200 in **4.8 s** on a real MR series |
 | 4 | MONAI's PACS access works, and fails without credentials | **PASS** — 200 as the `monai` account, 401 without |
-| 5 | Port 8043 unreachable from the LAN | **still open** — see §10 |
+| 5 | Port 8043 unreachable from the LAN | **PASS** — closed 2026-10-04, §8.5 |
 | 6 | Access log shows the real codes | **PASS** — only the deliberate allowlist 404s |
 
 The report, through the whole chain and on a real study, was:
@@ -671,6 +672,51 @@ other (`…1449903`) has twenty-odd real MR series with full geometry, including
 **Not from a server desktop.** Server 1 has no GPU render node at all, so Firefox there
 falls back to software rendering. See `NGINX-OHIF-AI.md` §11 for which machine does which
 computation.
+
+### 8.4 The PACS round-trip — VERIFIED 2026-10-04
+
+A segmentation made in the browser and saved as `PACStest` is in the production Orthanc:
+
+```
+Modality          SEG          SOPClassUID  1.2.840.10008.5.1.4.1.1.66.4
+512 x 512, 23 frames, 2 segments from nnInteractive
+references        'CORO T2' (44 instances, MR) - a real series in the same study
+patient           BOUSSEDRAYA MERIEM / PAT-1329397
+```
+
+**And it is visible from both viewers.** Queried through each origin independently, each
+returns the same 23 series including `PACStest`:
+
+```
+viewer.hospital.lan     23 series, SEG: PACStest     <- the existing OHIF 3.9.2
+ai-viewer.hospital.lan  23 series, SEG: PACStest     <- OHIF-AI
+```
+
+That is the premise the entire side-by-side design rests on (§1.1 of `OHIF-AI.md`): one
+PACS, two viewers, work done in either visible from the other. It is now demonstrated on
+production data rather than assumed.
+
+> **The labels confirm §4.3 is still outstanding.** The segments are named
+> `nninter_pred_20261004172547` and `nninter_pred_20261004172558` — timestamps, not clinical
+> findings — and `SegmentAlgorithmName` carries `nninter_0.1776447296142578`, which is a
+> timing value that has leaked into a provenance field. A reader a year from now cannot tell
+> what was segmented or by which model version. Agree the convention before clinical use.
+
+### 8.5 Port 8043 closed — 2026-10-04
+
+`orthanc-cors-proxy` no longer publishes a port. It injects admin credentials into every
+request it forwards, so a published port was an **authentication bypass**: anything on the
+hospital LAN could read and write the PACS without presenting a credential of its own.
+
+```
+from Server 2:  http://<server1>:8043/dicom-web/studies   ->  unreachable
+viewer.hospital.lan     /dicom-web/studies  ->  200
+ai-viewer.hospital.lan  /dicom-web/studies  ->  200
+WWW-Authenticate headers                    ->  0
+```
+
+Nothing broke, because NPM always reached it over the Docker network on port 80 and never
+needed the published port. The finding in §2.2 is closed.
 
 ---
 

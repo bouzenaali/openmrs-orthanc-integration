@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <!--
+      medreport schema.
+
+      Changesets are immutable once they have run anywhere: Liquibase permanently marks an id
+      as done the moment a checksum for it is recorded, so editing one only produces a
+      validation error for anyone who already ran it. Always append a new changeset instead.
+      (Same rule, and the same war story, as patientview's liquibase.xml.)
+    -->
+
+    <!-- ==================================================================
+         1. Report identity (RP5: soft delete only, never a physical delete)
+         ================================================================== -->
+    <changeSet id="medreport-2026-08-17-01" author="medreport">
+        <comment>Create medreport_image_report - the stable identity of an imaging report.</comment>
+        <createTable tableName="medreport_image_report">
+            <column name="report_id" type="int" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="uuid" type="char(38)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="patient_id" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="encounter_id" type="int"/>
+            <column name="author_user_id" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="date_created" type="datetime">
+                <constraints nullable="false"/>
+            </column>
+            <!-- No FK: medreport_image_report_version does not exist yet and the two tables
+                 reference each other. Hibernate resolves the association from this column
+                 regardless, and the value is only ever written by the service. -->
+            <column name="current_version_id" type="int"/>
+            <column name="voided" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="voided_by" type="int"/>
+            <column name="date_voided" type="datetime"/>
+            <column name="void_reason" type="varchar(500)"/>
+        </createTable>
+
+        <addForeignKeyConstraint constraintName="medreport_image_report_patient_fk"
+                                 baseTableName="medreport_image_report" baseColumnNames="patient_id"
+                                 referencedTableName="patient" referencedColumnNames="patient_id"/>
+        <addForeignKeyConstraint constraintName="medreport_image_report_encounter_fk"
+                                 baseTableName="medreport_image_report" baseColumnNames="encounter_id"
+                                 referencedTableName="encounter" referencedColumnNames="encounter_id"/>
+        <addForeignKeyConstraint constraintName="medreport_image_report_author_fk"
+                                 baseTableName="medreport_image_report" baseColumnNames="author_user_id"
+                                 referencedTableName="users" referencedColumnNames="user_id"/>
+        <addForeignKeyConstraint constraintName="medreport_image_report_voided_by_fk"
+                                 baseTableName="medreport_image_report" baseColumnNames="voided_by"
+                                 referencedTableName="users" referencedColumnNames="user_id"/>
+
+        <createIndex tableName="medreport_image_report" indexName="medreport_image_report_patient_idx">
+            <column name="patient_id"/>
+        </createIndex>
+        <createIndex tableName="medreport_image_report" indexName="medreport_image_report_author_idx">
+            <column name="author_user_id"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- ==================================================================
+         2. Immutable version chain (RP3, RP8)
+         ================================================================== -->
+    <changeSet id="medreport-2026-08-17-02" author="medreport">
+        <comment>Create medreport_image_report_version - one immutable row per state transition.</comment>
+        <createTable tableName="medreport_image_report_version">
+            <column name="version_id" type="int" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="uuid" type="char(38)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="report_id" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version_number" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="title" type="varchar(255)"/>
+            <column name="observation_text" type="longtext"/>
+            <column name="obs_id" type="int"/>
+            <column name="document_filename" type="varchar(255)"/>
+            <column name="change_type" type="varchar(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="change_reason" type="varchar(500)"/>
+            <column name="created_by" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="date_created" type="datetime">
+                <constraints nullable="false"/>
+            </column>
+            <column name="previous_version_id" type="int"/>
+            <column name="is_current" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint constraintName="medreport_version_report_fk"
+                                 baseTableName="medreport_image_report_version" baseColumnNames="report_id"
+                                 referencedTableName="medreport_image_report" referencedColumnNames="report_id"/>
+        <addForeignKeyConstraint constraintName="medreport_version_obs_fk"
+                                 baseTableName="medreport_image_report_version" baseColumnNames="obs_id"
+                                 referencedTableName="obs" referencedColumnNames="obs_id"/>
+        <addForeignKeyConstraint constraintName="medreport_version_created_by_fk"
+                                 baseTableName="medreport_image_report_version" baseColumnNames="created_by"
+                                 referencedTableName="users" referencedColumnNames="user_id"/>
+        <addForeignKeyConstraint constraintName="medreport_version_previous_fk"
+                                 baseTableName="medreport_image_report_version"
+                                 baseColumnNames="previous_version_id"
+                                 referencedTableName="medreport_image_report_version"
+                                 referencedColumnNames="version_id"/>
+
+        <createIndex tableName="medreport_image_report_version" indexName="medreport_version_report_idx">
+            <column name="report_id"/>
+            <column name="version_number"/>
+        </createIndex>
+        <!-- The non-admin read path is always "the current version of this report" (RP4). -->
+        <createIndex tableName="medreport_image_report_version" indexName="medreport_version_current_idx">
+            <column name="report_id"/>
+            <column name="is_current"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- ==================================================================
+         3. Report <-> image many-to-many (RP9)
+         ================================================================== -->
+    <changeSet id="medreport-2026-08-17-03" author="medreport">
+        <comment>
+            Create medreport_report_image - the true many-to-many association between reports
+            and Orthanc studies/series. One report may cover many images and one image may be
+            covered by many reports; neither side holds a foreign key to the other.
+        </comment>
+        <createTable tableName="medreport_report_image">
+            <column name="report_image_id" type="int" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="report_id" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version_id" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="orthanc_study_uid" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="orthanc_series_uid" type="varchar(255)"/>
+            <column name="study_instance_uid" type="varchar(255)"/>
+            <column name="modality" type="varchar(32)"/>
+            <column name="study_date" type="varchar(32)"/>
+            <column name="study_description" type="varchar(255)"/>
+            <column name="sort_weight" type="int" defaultValueNumeric="0"/>
+        </createTable>
+
+        <addForeignKeyConstraint constraintName="medreport_report_image_report_fk"
+                                 baseTableName="medreport_report_image" baseColumnNames="report_id"
+                                 referencedTableName="medreport_image_report" referencedColumnNames="report_id"/>
+        <addForeignKeyConstraint constraintName="medreport_report_image_version_fk"
+                                 baseTableName="medreport_report_image" baseColumnNames="version_id"
+                                 referencedTableName="medreport_image_report_version"
+                                 referencedColumnNames="version_id"/>
+
+        <!-- "Which reports cover this study?" - the reverse direction of the many-to-many,
+             hit on every open of the imaging tab. -->
+        <createIndex tableName="medreport_report_image" indexName="medreport_report_image_study_idx">
+            <column name="orthanc_study_uid"/>
+        </createIndex>
+        <createIndex tableName="medreport_report_image" indexName="medreport_report_image_series_idx">
+            <column name="orthanc_series_uid"/>
+        </createIndex>
+        <createIndex tableName="medreport_report_image" indexName="medreport_report_image_version_idx">
+            <column name="version_id"/>
+        </createIndex>
+        <createIndex tableName="medreport_report_image" indexName="medreport_report_image_report_idx">
+            <column name="report_id"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- ==================================================================
+         4. Append-only audit log (RP7)
+         ================================================================== -->
+    <changeSet id="medreport-2026-08-17-04" author="medreport">
+        <comment>
+            Create medreport_operation_log. No foreign keys on purpose: an audit row must stay
+            readable and self-contained, and must never be reachable by a cascade from the
+            entities it describes.
+        </comment>
+        <createTable tableName="medreport_operation_log">
+            <column name="log_id" type="int" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="uuid" type="char(38)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="action" type="varchar(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="report_id" type="int"/>
+            <column name="report_uuid" type="char(38)"/>
+            <column name="report_version_id" type="int"/>
+            <column name="version_number" type="int"/>
+            <column name="patient_id" type="int"/>
+            <column name="user_id" type="int"/>
+            <column name="username" type="varchar(255)"/>
+            <column name="ip_address" type="varchar(64)"/>
+            <column name="date_created" type="datetime">
+                <constraints nullable="false"/>
+            </column>
+            <column name="success" type="boolean" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="details" type="longtext"/>
+        </createTable>
+
+        <createIndex tableName="medreport_operation_log" indexName="medreport_log_report_idx">
+            <column name="report_id"/>
+        </createIndex>
+        <createIndex tableName="medreport_operation_log" indexName="medreport_log_user_idx">
+            <column name="user_id"/>
+        </createIndex>
+        <createIndex tableName="medreport_operation_log" indexName="medreport_log_date_idx">
+            <column name="date_created"/>
+        </createIndex>
+        <createIndex tableName="medreport_operation_log" indexName="medreport_log_patient_idx">
+            <column name="patient_id"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- ==================================================================
+         5. Per-user report personalisation preferences
+         ================================================================== -->
+    <changeSet id="medreport-2026-08-17-05" author="medreport">
+        <comment>Create medreport_user_preference - persisted report-personalisation choices, per user.</comment>
+        <createTable tableName="medreport_user_preference">
+            <column name="preference_id" type="int" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="uuid" type="char(38)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="user_id" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="preference_key" type="varchar(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="preference_value" type="longtext"/>
+            <column name="date_created" type="datetime">
+                <constraints nullable="false"/>
+            </column>
+            <column name="date_changed" type="datetime"/>
+        </createTable>
+
+        <addForeignKeyConstraint constraintName="medreport_user_preference_user_fk"
+                                 baseTableName="medreport_user_preference" baseColumnNames="user_id"
+                                 referencedTableName="users" referencedColumnNames="user_id"/>
+
+        <!-- One row per (user, key): the service upserts rather than accumulating history,
+             since a preference is a convenience setting and not a clinical record. -->
+        <addUniqueConstraint constraintName="medreport_user_preference_unique"
+                             tableName="medreport_user_preference"
+                             columnNames="user_id, preference_key"/>
+    </changeSet>
+
+</databaseChangeLog>

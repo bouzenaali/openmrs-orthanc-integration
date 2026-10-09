@@ -1,0 +1,41 @@
+[
+  {
+    "id": "agentgateway.patientDashboard.chatWidget",
+    "extensionPointId": "patientDashboard.secondColumnFragments",
+    "requiredPrivilege": "App: agentgateway.chat.use",
+    "extensionParams": {
+      "provider": "agentgateway",
+      "fragment": "chatWidget"
+    }
+  },
+  {
+    "id": "agentgateway.patientDashboard.chatLink",
+    "extensionPointId": "patientDashboard.overallActions",
+    "type": "link",
+    "label": "Assistant clinique",
+    "url": "agentgateway/chat.page?patientId={{patient.uuid}}",
+    "icon": "icon-comments",
+    "order": 2,
+    "requiredPrivilege": "App: agentgateway.chat.use"
+  },
+  {
+    "id": "agentgateway.homepage.chatLink",
+    "extensionPointId": "org.openmrs.referenceapplication.homepageLink",
+    "type": "link",
+    "label": "Assistant clinique",
+    "url": "agentgateway/chat.page",
+    "icon": "icon-comments",
+    "order": 60,
+    "requiredPrivilege": "App: agentgateway.chat.use"
+  },
+  {
+    "id": "agentgateway.systemAdministration.operationLog",
+    "extensionPointId": "org.openmrs.module.coreapps.systemAdministration",
+    "type": "link",
+    "label": "Operations de l'assistant clinique",
+    "url": "agentgateway/operationLog.page",
+    "icon": "icon-list-alt",
+    "order": 100,
+    "requiredPrivilege": "App: agentgateway.rollback"
+  }
+]

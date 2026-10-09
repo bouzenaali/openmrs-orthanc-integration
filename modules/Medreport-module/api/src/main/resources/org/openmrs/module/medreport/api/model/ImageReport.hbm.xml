@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+        "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+        "http://hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping package="org.openmrs.module.medreport.api.model">
+    <class name="ImageReport" table="medreport_image_report">
+        <id name="id" type="int" column="report_id">
+            <generator class="native"/>
+        </id>
+        <property name="uuid" type="string" column="uuid" length="38" unique="true" not-null="true"/>
+        <many-to-one name="patient" class="org.openmrs.Patient" column="patient_id" not-null="true"/>
+        <many-to-one name="encounter" class="org.openmrs.Encounter" column="encounter_id"/>
+        <many-to-one name="author" class="org.openmrs.User" column="author_user_id" not-null="true"/>
+        <property name="dateCreated" type="timestamp" column="date_created" not-null="true"/>
+
+        <!-- Pointer to the row where is_current = true. Denormalised on purpose: the
+             non-admin read path (RP4/RP8) resolves the single current version on every
+             request, and a join through the whole chain to find it would be the hottest
+             query in the module. -->
+        <many-to-one name="currentVersion" class="ImageReportVersion" column="current_version_id"
+                     cascade="none" lazy="false"/>
+
+        <property name="voided" type="boolean" column="voided" not-null="true"/>
+        <many-to-one name="voidedBy" class="org.openmrs.User" column="voided_by"/>
+        <property name="dateVoided" type="timestamp" column="date_voided"/>
+        <property name="voidReason" type="string" column="void_reason" length="500"/>
+
+        <!-- inverse: the version owns the FK. No delete-orphan / delete cascade anywhere in
+             this module - versions are never removed, only superseded (RP8). -->
+        <bag name="versions" inverse="true" lazy="true" cascade="save-update"
+             order-by="version_number asc">
+            <key column="report_id"/>
+            <one-to-many class="ImageReportVersion"/>
+        </bag>
+    </class>
+</hibernate-mapping>

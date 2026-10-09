@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="
+         http://www.springframework.org/schema/beans
+         http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+         http://www.springframework.org/schema/context
+         http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+
+    <!-- Scan only the web controllers. Widening this to the module root would pick up the
+         api-layer beans a second time, since the api jar is unpacked into the omod. -->
+    <context:component-scan base-package="org.openmrs.module.medreport.web.controller"/>
+
+    <!-- Registers pages/fragments/resources under the medreport namespace with the UI
+         framework, so ui.includeFragment("medreport", ...) resolves. -->
+    <bean class="org.openmrs.ui.framework.StandardModuleUiConfiguration">
+        <property name="moduleId" value="medreport"/>
+    </bean>
+
+</beans>

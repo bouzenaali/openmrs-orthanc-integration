@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+         http://www.springframework.org/schema/beans
+         http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+  <!--
+    Note what is NOT here: a bean of type org.openmrs.api.context.AuthenticationScheme. Declaring
+    one would override the platform's global authentication scheme and put this module on the
+    critical path of every login in the hospital. DelegatedAuthenticationScheme is instead
+    instantiated per request by the audit filter - see that class's javadoc.
+  -->
+
+  <bean id="agentgateway.AgentGatewayDao"
+        class="org.openmrs.module.agentgateway.api.dao.AgentGatewayDaoImpl">
+    <property name="sessionFactory" ref="sessionFactory"/>
+  </bean>
+
+  <bean id="agentgateway.AgentGatewayServiceTarget"
+        class="org.openmrs.module.agentgateway.api.impl.AgentGatewayServiceImpl">
+    <property name="dao" ref="agentgateway.AgentGatewayDao"/>
+  </bean>
+
+  <bean id="agentgateway.AgentGatewayService"
+        class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean"
+        primary="true">
+    <property name="transactionManager" ref="transactionManager"/>
+    <property name="target" ref="agentgateway.AgentGatewayServiceTarget"/>
+    <property name="transactionAttributes">
+      <props>
+        <!--
+          recordOperation runs in its own transaction on purpose. The audit row is written after
+          the call it describes has already been committed by the servlet; a failure to record it
+          must not be able to reach back and undo a clinical write, nor the other way round.
+        -->
+        <prop key="recordOperation">PROPAGATION_REQUIRES_NEW</prop>
+        <prop key="*">PROPAGATION_REQUIRED</prop>
+      </props>
+    </property>
+  </bean>
+
+  <bean parent="serviceContext">
+    <property name="moduleService">
+      <list>
+        <value>org.openmrs.module.agentgateway.api.AgentGatewayService</value>
+        <ref bean="agentgateway.AgentGatewayService"/>
+      </list>
+    </property>
+  </bean>
+</beans>

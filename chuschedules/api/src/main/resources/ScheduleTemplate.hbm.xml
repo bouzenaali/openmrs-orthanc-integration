@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+    "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping package="org.openmrs.module.chuschedules">
+
+    <!--
+        Calendar dates are mapped as Hibernate "date", never "java.util.Date". The app JVM
+        runs Africa/Algiers while MySQL runs UTC, so binding a date as a timestamp turns
+        local midnight into 23:00 the previous day and the DATE column silently keeps the
+        wrong day. "date" binds a java.sql.Date and is timezone-free.
+    -->
+
+    <class name="ScheduleTemplate" table="chu_schedule_template">
+        <id name="templateId" type="java.lang.Integer" column="template_id">
+            <generator class="native"/>
+        </id>
+        <property name="name" type="java.lang.String" column="name" length="255" not-null="true"/>
+        <property name="validFrom" type="date" column="valid_from" not-null="true"/>
+        <property name="validTo" type="date" column="valid_to"/>
+        <property name="active" type="java.lang.Boolean" column="active" not-null="true"/>
+
+        <many-to-one name="provider" class="org.openmrs.Provider" column="provider_id" not-null="true"/>
+        <many-to-one name="location" class="org.openmrs.Location" column="location_id" not-null="true"/>
+
+        <!--
+            cascade is "all", NOT "all-delete-orphan". Removing a range must never DELETE
+            its row: chu_generated_block references it, and the database rightly refuses,
+            which previously made editing a template that had generated anything fail at
+            commit time with no error reaching the user. Ranges are voided instead, which
+            also keeps the provenance of blocks already generated from them.
+        -->
+        <set name="ranges" table="chu_schedule_template_range" inverse="true" cascade="all"
+             lazy="false" order-by="day_of_week, start_time">
+            <key column="template_id" not-null="true"/>
+            <one-to-many class="ScheduleTemplateRange"/>
+        </set>
+
+        <set name="types" table="chu_schedule_template_type" lazy="false">
+            <key column="template_id"/>
+            <many-to-many class="org.openmrs.module.appointmentscheduling.AppointmentType"
+                          column="appointment_type_id"/>
+        </set>
+
+        <property name="dateCreated" type="java.util.Date" column="date_created" not-null="true"/>
+        <property name="dateChanged" type="java.util.Date" column="date_changed"/>
+        <property name="voided" type="java.lang.Boolean" column="voided" not-null="true"/>
+        <property name="dateVoided" type="java.util.Date" column="date_voided"/>
+        <property name="voidReason" type="java.lang.String" column="void_reason" length="255"/>
+        <property name="uuid" type="java.lang.String" column="uuid" length="38" unique="true" not-null="true"/>
+
+        <many-to-one name="creator" class="org.openmrs.User" column="creator" not-null="true"/>
+        <many-to-one name="changedBy" class="org.openmrs.User" column="changed_by"/>
+        <many-to-one name="voidedBy" class="org.openmrs.User" column="voided_by"/>
+    </class>
+
+</hibernate-mapping>

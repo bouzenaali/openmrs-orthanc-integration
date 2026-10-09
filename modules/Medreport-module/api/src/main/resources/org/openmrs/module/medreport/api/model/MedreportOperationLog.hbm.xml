@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+        "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+        "http://hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping package="org.openmrs.module.medreport.api.model">
+    <!-- Append-only (RP7). Deliberately mapped with plain integer columns rather than
+         many-to-one associations: an audit row must remain readable on its own, and must
+         not be able to cascade a change into the entities it describes. -->
+    <class name="MedreportOperationLog" table="medreport_operation_log" mutable="false">
+        <id name="id" type="int" column="log_id">
+            <generator class="native"/>
+        </id>
+        <property name="uuid" type="string" column="uuid" length="38" unique="true" not-null="true"/>
+        <property name="action" type="string" column="action" length="32" not-null="true"/>
+        <property name="reportId" type="java.lang.Integer" column="report_id"/>
+        <property name="reportUuid" type="string" column="report_uuid" length="38"/>
+        <property name="reportVersionId" type="java.lang.Integer" column="report_version_id"/>
+        <property name="versionNumber" type="java.lang.Integer" column="version_number"/>
+        <property name="patientId" type="java.lang.Integer" column="patient_id"/>
+        <property name="userId" type="java.lang.Integer" column="user_id"/>
+        <property name="username" type="string" column="username" length="255"/>
+        <property name="ipAddress" type="string" column="ip_address" length="64"/>
+        <property name="dateCreated" type="timestamp" column="date_created" not-null="true"/>
+        <property name="success" type="boolean" column="success" not-null="true"/>
+        <property name="details" type="text" column="details"/>
+    </class>
+</hibernate-mapping>

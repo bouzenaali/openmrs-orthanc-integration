@@ -1,0 +1,2894 @@
+@charset "UTF-8";
+/*!
+ * CHU Blida Clinical Theme for OpenMRS Reference Application 2.12.2
+ * Centre Hospitalo-Universitaire de Blida
+ *
+ * Layered over the stock uicommons / referenceapplication / legacyui stylesheets.
+ * No upstream file is modified. Stopping the chublidatheme module removes all of this.
+ *
+ * Conventions used throughout:
+ *   - CSS logical properties only (inline-start/end), so Arabic RTL works without a second sheet.
+ *   - Only transform and opacity are animated, so nothing forces layout during interaction.
+ *   - Clinical status is never colour alone; every status rule pairs colour with an icon or weight.
+ *   - Custom DOM added by chu-theme.js is namespaced `chu-`.
+ */
+
+/* === GENERATED TOKENS — do not edit by hand; run tools/build-tokens.mjs === */
+:root {
+  /* primitives */
+  --chu-teal-50: #F3F9F7;
+  --chu-teal-100: #E5F3EF;
+  --chu-teal-200: #C8ECE1;
+  --chu-teal-300: #98E9D1;
+  --chu-teal-400: #68DFBB;
+  --chu-teal-500: #29C093;
+  --chu-teal-600: #26B389;
+  --chu-teal-700: #218C6C;
+  --chu-teal-800: #1A6C53;
+  --chu-teal-900: #13513E;
+  --chu-teal-950: #0D3629;
+  --chu-blue-50: #F1F5FB;
+  --chu-blue-100: #E1E9F6;
+  --chu-blue-200: #BED2F6;
+  --chu-blue-300: #82AFFF;
+  --chu-blue-400: #478AFF;
+  --chu-blue-500: #0A63FF;
+  --chu-blue-600: #004ED9;
+  --chu-blue-700: #0440A9;
+  --chu-blue-800: #033182;
+  --chu-blue-900: #022561;
+  --chu-blue-950: #021841;
+  --chu-amber-50: #FBF8F1;
+  --chu-amber-100: #F6F0E2;
+  --chu-amber-200: #F5E4BF;
+  --chu-amber-300: #FDD784;
+  --chu-amber-400: #FBC44B;
+  --chu-amber-500: #FAB00F;
+  --chu-amber-600: #D59304;
+  --chu-amber-700: #A67408;
+  --chu-amber-800: #805906;
+  --chu-amber-900: #604304;
+  --chu-red-50: #FDECEA;
+  --chu-red-100: #FBD9D5;
+  --chu-red-200: #F5B0A9;
+  --chu-red-500: #DA3B31;
+  --chu-red-600: #B3261E;
+  --chu-red-700: #8C1D17;
+  --chu-red-800: #6B1611;
+  --chu-neutral-0: #FFFFFF;
+  --chu-neutral-25: #FBFCFC;
+  --chu-neutral-50: #F6F8F7;
+  --chu-neutral-100: #EEF2F0;
+  --chu-neutral-200: #DCE5E1;
+  --chu-neutral-300: #C4D2CC;
+  --chu-neutral-400: #7C8F88;
+  --chu-neutral-500: #657570;
+  --chu-neutral-600: #4A5B55;
+  --chu-neutral-700: #33433D;
+  --chu-neutral-800: #1E2E28;
+  --chu-neutral-900: #12211C;
+  --chu-neutral-950: #0A1512;
+
+  /* semantic */
+  --chu-canvas: #F6F8F7;  /* app background */
+  --chu-surface: #FFFFFF;  /* cards, header, tables */
+  --chu-surface-sunken: #F3F9F7;
+  --chu-surface-raised: #FFFFFF;
+  --chu-surface-brand: #0D3629;  /* inverted areas */
+  --chu-ink: #12211C;
+  --chu-ink-muted: #4A5B55;
+  --chu-ink-subtle: #657570;
+  --chu-ink-inverse: #FFFFFF;
+  --chu-action: #1A6C53;  /* primary buttons; white text 6.34:1 */
+  --chu-action-hover: #13513E;
+  --chu-action-soft: #E5F3EF;
+  --chu-action-quiet: #218C6C;  /* icons and borders; >=3:1 */
+  --chu-link: #004ED9;
+  --chu-link-hover: #0440A9;
+  --chu-focus: #0A63FF;
+  --chu-brand-vivid: #29C093;  /* DECORATIVE ONLY - 2.32:1, never text or a meaningful edge */
+  --chu-brand-blue: #0057F1;  /* DECORATIVE ONLY */
+  --chu-border: #DCE5E1;  /* decorative dividers */
+  --chu-border-strong: #C4D2CC;
+  --chu-border-control: #7C8F88;  /* meaningful control outlines; >=3:1 */
+  --chu-critical: #B3261E;
+  --chu-critical-bg: #FDECEA;
+  --chu-warning: #805906;
+  --chu-warning-bg: #F6F0E2;
+  --chu-success: #1A6C53;
+  --chu-success-bg: #E5F3EF;
+  --chu-info: #0440A9;
+  --chu-info-bg: #E1E9F6;
+
+  /* spacing */
+  --chu-space-1: 4px;
+  --chu-space-2: 8px;
+  --chu-space-3: 12px;
+  --chu-space-4: 16px;
+  --chu-space-5: 24px;
+  --chu-space-6: 32px;
+  --chu-space-7: 48px;
+  --chu-space-8: 64px;
+
+  /* radii */
+  --chu-radius-sm: 4px;
+  --chu-radius-md: 8px;
+  --chu-radius-lg: 12px;
+  --chu-radius-xl: 18px;
+  --chu-radius-pill: 999px;
+
+  /* elevation */
+  --chu-shadow-1: 0 1px 2px rgba(18,33,28,.06), 0 1px 3px rgba(18,33,28,.08);
+  --chu-shadow-2: 0 2px 6px rgba(18,33,28,.07), 0 6px 16px rgba(18,33,28,.09);
+  --chu-shadow-3: 0 8px 24px rgba(18,33,28,.10), 0 16px 48px rgba(18,33,28,.12);
+  --chu-shadow-rail: 0 0 0 1px rgba(18,33,28,.05), 8px 0 28px rgba(18,33,28,.10);
+
+  /* type */
+  --chu-font-ui: "Inter", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --chu-font-display: "Cairo", "Inter", "Segoe UI", system-ui, sans-serif;
+  --chu-font-mono: "JetBrains Mono", "Cascadia Mono", Consolas, "Courier New", monospace;
+  --chu-text-xs: 12px;
+  --chu-text-sm: 13px;
+  --chu-text-base: 14px;
+  --chu-text-md: 15px;
+  --chu-text-lg: 16px;
+  --chu-text-xl: 20px;
+  --chu-text-2xl: 24px;
+  --chu-text-3xl: 28px;
+
+  /* motion */
+  --chu-dur-instant: 90ms;
+  --chu-dur-fast: 140ms;
+  --chu-dur-base: 220ms;
+  --chu-dur-slow: 320ms;
+  --chu-ease-out: cubic-bezier(.22,.8,.28,1);
+  --chu-ease-in: cubic-bezier(.5,0,.75,0);
+  --chu-ease-spring: cubic-bezier(.34,1.42,.64,1);
+
+  /* layout */
+  --chu-rail-collapsed: 56px;
+  --chu-rail-expanded: 248px;
+  --chu-panel-width: 380px;
+  --chu-header-height: 58px;
+  --chu-content-max: 1600px;
+}
+/* === END GENERATED TOKENS === */
+
+
+/* ==========================================================================
+   1. Self-hosted fonts
+   A hospital intranet may have no route to fonts.googleapis.com, so both
+   families ship inside the omod. font-display:swap keeps text readable while
+   they load.
+   ========================================================================== */
+
+/* === GENERATED FONT FACES — run tools/fetch-fonts.mjs === */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/inter-400-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/inter-400-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../fonts/inter-500-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../fonts/inter-500-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("../fonts/inter-600-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("../fonts/inter-600-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Cairo";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("../fonts/cairo-600-arabic.woff2") format("woff2");
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC, U+102E0-102FB, U+10E60-10E7E, U+10EC2-10EC4, U+10EFC-10EFF, U+1EE00-1EE03, U+1EE05-1EE1F, U+1EE21-1EE22, U+1EE24, U+1EE27, U+1EE29-1EE32, U+1EE34-1EE37, U+1EE39, U+1EE3B, U+1EE42, U+1EE47, U+1EE49, U+1EE4B, U+1EE4D-1EE4F, U+1EE51-1EE52, U+1EE54, U+1EE57, U+1EE59, U+1EE5B, U+1EE5D, U+1EE5F, U+1EE61-1EE62, U+1EE64, U+1EE67-1EE6A, U+1EE6C-1EE72, U+1EE74-1EE77, U+1EE79-1EE7C, U+1EE7E, U+1EE80-1EE89, U+1EE8B-1EE9B, U+1EEA1-1EEA3, U+1EEA5-1EEA9, U+1EEAB-1EEBB, U+1EEF0-1EEF1;
+}
+@font-face {
+  font-family: "Cairo";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("../fonts/cairo-600-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Cairo";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("../fonts/cairo-600-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Cairo";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../fonts/cairo-700-arabic.woff2") format("woff2");
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC, U+102E0-102FB, U+10E60-10E7E, U+10EC2-10EC4, U+10EFC-10EFF, U+1EE00-1EE03, U+1EE05-1EE1F, U+1EE21-1EE22, U+1EE24, U+1EE27, U+1EE29-1EE32, U+1EE34-1EE37, U+1EE39, U+1EE3B, U+1EE42, U+1EE47, U+1EE49, U+1EE4B, U+1EE4D-1EE4F, U+1EE51-1EE52, U+1EE54, U+1EE57, U+1EE59, U+1EE5B, U+1EE5D, U+1EE5F, U+1EE61-1EE62, U+1EE64, U+1EE67-1EE6A, U+1EE6C-1EE72, U+1EE74-1EE77, U+1EE79-1EE7C, U+1EE7E, U+1EE80-1EE89, U+1EE8B-1EE9B, U+1EEA1-1EEA3, U+1EEA5-1EEA9, U+1EEAB-1EEBB, U+1EEF0-1EEF1;
+}
+@font-face {
+  font-family: "Cairo";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../fonts/cairo-700-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Cairo";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../fonts/cairo-700-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* === END GENERATED FONT FACES === */
+
+
+
+/* ==========================================================================
+   2. Base
+   ========================================================================== */
+
+html {
+  -webkit-text-size-adjust: 100%;
+  /* The off-canvas panel and rail park outside the viewport with a transform,
+     which otherwise extends the scrollable area and gives the page a phantom
+     horizontal scrollbar on narrow screens. `clip` suppresses that without
+     making the root a scroll container, which `hidden` would - and that would
+     break position:sticky elsewhere on the page. */
+  overflow-x: clip;
+}
+/* Fallback for engines without overflow:clip. */
+@supports not (overflow-x: clip) {
+  body { overflow-x: hidden; }
+}
+
+body {
+  background: var(--chu-canvas) !important;
+  color: var(--chu-ink) !important;
+  font-family: var(--chu-font-ui) !important;
+  font-size: var(--chu-text-base) !important;
+  line-height: 1.6 !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Digits that sit in columns must line up: identifiers, doses, vitals, labs. */
+.chu-numeric,
+input[type="number"],
+td.numeric,
+.identifiers span,
+.gender-age span,
+.vitals td,
+table td:has(> .value) {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+#body-wrapper {
+  background: transparent !important;
+}
+
+#content,
+#body-wrapper > #content {
+  background: transparent !important;
+  max-inline-size: var(--chu-content-max);
+  margin-inline: auto;
+  padding-inline: var(--chu-space-5);
+  padding-block: var(--chu-space-5) var(--chu-space-8);
+}
+
+/*
+  STRUCTURAL RULE — colour on generic elements is set by specificity, never by
+  !important.
+
+  An `!important` colour on a bare element repaints text inside every component
+  that paints its own background, and the theme cannot know which of those are
+  dark. That produced two separate unreadable-text defects: the coreapps
+  diagnosis chip (white-on-#006191 upstream, repainted dark by the generic
+  `label` rule) and the action-section headers (light-on-dark upstream,
+  repainted black by the generic heading rule).
+
+  Prefixing with `body` gives specificity (0,0,2) — enough to beat the bare
+  element selectors in the compiled uicommons sheet, while any component that
+  styles its own internals with a class (0,1,x) still wins. Components own
+  their contents; the theme only supplies the default.
+*/
+body h1, body h2, body h3, body h4, body h5, body h6 {
+  font-family: var(--chu-font-display) !important;
+  color: var(--chu-ink);
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+h1 { font-size: var(--chu-text-3xl) !important; font-weight: 700 !important; line-height: 1.25 !important; }
+h2 { font-size: var(--chu-text-xl) !important;  font-weight: 600 !important; line-height: 1.3 !important; }
+h3 { font-size: var(--chu-text-lg) !important;  font-weight: 600 !important; }
+h4, h5, h6 { font-size: var(--chu-text-base) !important; font-weight: 600 !important; }
+
+a {
+  color: var(--chu-link);
+  text-decoration: none;
+  transition: color var(--chu-dur-fast) var(--chu-ease-out);
+}
+a:hover { color: var(--chu-link-hover); text-decoration: underline; text-underline-offset: 2px; }
+a:visited { color: var(--chu-link); }
+
+/* Keyboard users move through a clinical UI faster than mouse users - but only
+   if they can see where they are. The stock focus styling is far too weak. */
+:focus-visible {
+  outline: 2px solid var(--chu-focus) !important;
+  outline-offset: 2px !important;
+  border-radius: var(--chu-radius-sm);
+}
+:focus:not(:focus-visible) { outline: none; }
+
+::selection { background: var(--chu-action-soft); color: var(--chu-ink); }
+
+hr, hr.separator {
+  border: 0;
+  border-block-start: 1px solid var(--chu-border);
+  margin-block: var(--chu-space-5);
+}
+
+.chu-visually-hidden {
+  position: absolute !important;
+  inline-size: 1px; block-size: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/*
+  Skip link - injected by chu-theme.js.
+  legacyui's openmrs.css carries a bare `a:link` inside a selector list, which
+  at specificity (0,1,1) beats a single class and repainted this chip's label
+  navy-on-teal. The link states are therefore pinned explicitly.
+*/
+.chu-skip-link,
+.chu-skip-link:link,
+.chu-skip-link:visited,
+.chu-skip-link:hover,
+.chu-skip-link:active { color: var(--chu-ink-inverse) !important; }
+
+.chu-skip-link {
+  position: fixed;
+  inset-block-start: var(--chu-space-2);
+  inset-inline-start: var(--chu-space-2);
+  z-index: 1200;
+  padding: var(--chu-space-2) var(--chu-space-4);
+  background: var(--chu-action);
+  color: var(--chu-ink-inverse);
+  border-radius: var(--chu-radius-md);
+  font-weight: 600;
+  transform: translateY(-200%);
+  transition: transform var(--chu-dur-fast) var(--chu-ease-out);
+}
+.chu-skip-link:focus { transform: translateY(0); color: var(--chu-ink-inverse); }
+
+
+/* ==========================================================================
+   3. Header
+   White ground, because the CHU Blida mark is blue. A 3px brand gradient sits
+   above it so the institution reads immediately without spending the header
+   itself on colour.
+   ========================================================================== */
+
+header {
+  position: relative;
+  background: var(--chu-surface) !important;
+  border-block-end: 1px solid var(--chu-border) !important;
+  box-shadow: var(--chu-shadow-1);
+  min-block-size: var(--chu-header-height);
+  padding-inline: var(--chu-space-5) !important;
+  color: var(--chu-ink) !important;
+}
+
+header::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  block-size: 3px;
+  background: linear-gradient(90deg,
+      var(--chu-brand-vivid) 0%,
+      var(--chu-teal-600) 38%,
+      var(--chu-brand-blue) 100%);
+}
+
+header .navbar,
+header .navigation {
+  background: transparent !important;
+  padding-inline: 0 !important;
+  min-block-size: var(--chu-header-height);
+}
+
+header .logo,
+header .navbar .logo {
+  padding-block: var(--chu-space-2);
+  display: flex;
+  align-items: center;
+}
+header .logo img {
+  block-size: 34px;
+  inline-size: auto;
+  max-inline-size: 230px;
+  transition: opacity var(--chu-dur-fast) var(--chu-ease-out);
+}
+header .logo a:hover img { opacity: .82; }
+
+header .app-title,
+header .app-title h1 {
+  color: var(--chu-ink) !important;
+  font-family: var(--chu-font-display) !important;
+  font-size: var(--chu-text-lg) !important;
+  font-weight: 600 !important;
+}
+header .app-title::after { display: none !important; }
+
+/* The header must never be able to push the page wider than the viewport, so
+   every level of the nav is allowed to shrink. */
+header .navbar,
+header .navigation,
+header .navbar-collapse,
+header .navbar-nav {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+header .logo { flex: 0 1 auto; min-inline-size: 0; }
+
+/* User / location controls */
+header .user-options,
+header ul.user-options {
+  display: flex;
+  align-items: center;
+  gap: var(--chu-space-1);
+  margin: 0;
+  min-inline-size: 0;
+  flex-wrap: nowrap;
+}
+header .user-options > li { min-inline-size: 0; }
+header .user-options .change-location span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-inline-size: 22ch;
+}
+header .user-options > li {
+  color: var(--chu-ink-muted) !important;
+  font-size: var(--chu-text-sm);
+  border: 0 !important;
+  border-radius: var(--chu-radius-md);
+  padding: var(--chu-space-2) var(--chu-space-3) !important;
+  min-block-size: 40px;
+  display: flex;
+  align-items: center;
+  gap: var(--chu-space-2);
+  transition: background-color var(--chu-dur-fast) var(--chu-ease-out);
+}
+header .user-options > li:hover { background: var(--chu-surface-sunken); }
+header .user-options > li a,
+header .user-options > li a:visited {
+  color: var(--chu-ink-muted) !important;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--chu-space-2);
+}
+header .user-options > li a:hover { color: var(--chu-action) !important; text-decoration: none; }
+header .user-options i { color: var(--chu-action-quiet) !important; }
+
+header .user-options .logout a:hover { color: var(--chu-critical) !important; }
+header .user-options .logout:hover i { color: var(--chu-critical) !important; }
+
+#user-account-menu,
+#session-location {
+  background: var(--chu-surface) !important;
+  border: 1px solid var(--chu-border) !important;
+  border-radius: var(--chu-radius-lg) !important;
+  box-shadow: var(--chu-shadow-3) !important;
+  padding: var(--chu-space-2) !important;
+  overflow: hidden;
+  animation: chu-drop var(--chu-dur-base) var(--chu-ease-out);
+}
+#user-account-menu li,
+#session-location ul.select li {
+  border: 0 !important;
+  border-radius: var(--chu-radius-sm);
+  padding: var(--chu-space-2) var(--chu-space-3) !important;
+  color: var(--chu-ink) !important;
+  transition: background-color var(--chu-dur-fast) var(--chu-ease-out);
+}
+#user-account-menu li:hover,
+#session-location ul.select li:hover { background: var(--chu-action-soft) !important; }
+#session-location ul.select li.selected {
+  background: var(--chu-action-soft) !important;
+  color: var(--chu-action) !important;
+  font-weight: 600;
+}
+
+@keyframes chu-drop {
+  from { transform: translateY(-6px); }
+  to   { transform: translateY(0); }
+}
+
+
+/* ==========================================================================
+   4. Breadcrumbs
+   ========================================================================== */
+
+#breadcrumbs {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  max-inline-size: var(--chu-content-max);
+  margin-inline: auto;
+  padding: var(--chu-space-4) var(--chu-space-5) 0 !important;
+  block-size: auto !important;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--chu-space-1);
+  font-size: var(--chu-text-xs);
+}
+#breadcrumbs li { color: var(--chu-ink-subtle) !important; display: inline-flex; align-items: center; gap: var(--chu-space-1); }
+/* Stock breadcrumb links are 19px tall, under the 24px WCAG 2.5.8 minimum.
+   The height comes from padding so the text size is unchanged. */
+#breadcrumbs a, #breadcrumbs a:link, #breadcrumbs a:visited {
+  color: var(--chu-ink-subtle) !important;
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 24px;
+  padding-inline: 2px;
+  border-radius: var(--chu-radius-sm);
+}
+#breadcrumbs a:hover { color: var(--chu-action) !important; }
+#breadcrumbs li:last-child { color: var(--chu-ink) !important; font-weight: 500; }
+#breadcrumbs i { color: var(--chu-border-strong) !important; font-size: 10px; }
+
+
+/* ==========================================================================
+   5. Buttons
+   ========================================================================== */
+
+/*
+  WHY :where() AND NOT A BARE :not() CHAIN
+
+  Each `:not([class*="..."])` contributes an attribute selector's specificity.
+  A chain of five raised these "generic" rules to (0,5,1) — high enough to beat
+  the theme's own component rules and any module rule short of !important. That
+  is what kept a border on the appointment service input despite a targeted
+  override. `:where()` contributes zero, so the selector keeps its natural
+  specificity and anything more specific still wins, which is the whole point
+  of an exclusion list.
+*/
+/*
+  Module-owned controls are excluded here. The three CHU modules each ship their
+  own button components (`.neuro-btn`, `.mr-btn`, imaging's `.btn-submit` /
+  `.btn-open-popup-*`), and imaging's `.table-btn-link` is a link rendered as a
+  <button>. Overriding those with the generic reset flattened their colours and
+  turned an inline link into a 40px bordered block inside a table cell.
+
+  They keep their own geometry; the theme only harmonises their colour further
+  down, in the module compatibility section.
+*/
+.button:where(:not([class*="neuro-"]):not([class*="mr-"]):not([class*="btn-submit"]):not([class*="btn-close-popup"]):not([class*="btn-open-popup"]):not([class*="table-btn-link"]):not(.chu-native)), button:where(:not([class*="neuro-"]):not([class*="mr-"]):not([class*="btn-submit"]):not([class*="btn-close-popup"]):not([class*="btn-open-popup"]):not([class*="table-btn-link"]):not(.chu-native)),
+input[type="submit"]:where(:not([class*="neuro-"]):not([class*="mr-"]):not([class*="btn-submit"]):not([class*="btn-close-popup"]):not([class*="btn-open-popup"]):not([class*="table-btn-link"]):not(.chu-native)), input[type="button"]:where(:not([class*="neuro-"]):not([class*="mr-"]):not([class*="btn-submit"]):not([class*="btn-close-popup"]):not([class*="btn-open-popup"]):not([class*="table-btn-link"]):not(.chu-native)), a.button:where(:not([class*="neuro-"]):not([class*="mr-"]):not([class*="btn-submit"]):not([class*="btn-close-popup"]):not([class*="btn-open-popup"]):not([class*="table-btn-link"]):not(.chu-native)),
+.btn:where(:not([class*="neuro-"]):not([class*="mr-"]):not([class*="btn-submit"]):not([class*="btn-close-popup"]):not([class*="btn-open-popup"]):not([class*="table-btn-link"]):not(.chu-native)) {
+  font-family: var(--chu-font-ui) !important;
+  font-size: var(--chu-text-base) !important;
+  font-weight: 600 !important;
+  line-height: 1.2 !important;
+  border-radius: var(--chu-radius-md) !important;
+  border: 1px solid var(--chu-border-control) !important;
+  background: var(--chu-surface) !important;
+  color: var(--chu-ink) !important;
+  padding: 10px var(--chu-space-4) !important;
+  min-block-size: 40px;
+  text-shadow: none !important;
+  box-shadow: var(--chu-shadow-1) !important;
+  cursor: pointer;
+  transition:
+    transform var(--chu-dur-fast) var(--chu-ease-out),
+    box-shadow var(--chu-dur-fast) var(--chu-ease-out),
+    background-color var(--chu-dur-fast) var(--chu-ease-out),
+    border-color var(--chu-dur-fast) var(--chu-ease-out);
+}
+.button:where(:not([class*="neuro-"]):not([class*="mr-"]):not([class*="btn-submit"]):not([class*="btn-close-popup"]):not([class*="btn-open-popup"]):not([class*="table-btn-link"]):not(.chu-native)):hover, button:where(:not([class*="neuro-"]):not([class*="mr-"]):not([class*="btn-submit"]):not([class*="btn-close-popup"]):not([class*="btn-open-popup"]):not([class*="table-btn-link"]):not(.chu-native)):hover,
+input[type="submit"]:where(:not([class*="neuro-"]):not([class*="mr-"]):not([class*="btn-submit"]):not([class*="btn-close-popup"]):not([class*="btn-open-popup"]):not([class*="table-btn-link"]):not(.chu-native)):hover, input[type="button"]:where(:not([class*="neuro-"]):not([class*="mr-"]):not([class*="btn-submit"]):not([class*="btn-close-popup"]):not([class*="btn-open-popup"]):not([class*="table-btn-link"]):not(.chu-native)):hover,
+a.button:where(:not([class*="neuro-"]):not([class*="mr-"]):not([class*="btn-submit"]):not([class*="btn-close-popup"]):not([class*="btn-open-popup"]):not([class*="table-btn-link"]):not(.chu-native)):hover, .btn:where(:not([class*="neuro-"]):not([class*="mr-"]):not([class*="btn-submit"]):not([class*="btn-close-popup"]):not([class*="btn-open-popup"]):not([class*="table-btn-link"]):not(.chu-native)):hover {
+  background: var(--chu-surface-sunken) !important;
+  border-color: var(--chu-action-quiet) !important;
+  color: var(--chu-action) !important;
+  transform: translateY(-1px);
+  box-shadow: var(--chu-shadow-2) !important;
+  text-decoration: none !important;
+}
+.button:active, button:active, .btn:active { transform: translateY(0); box-shadow: var(--chu-shadow-1) !important; }
+
+/* Primary / confirm */
+.button.confirm, button.confirm, input[type="submit"].confirm,
+.button.task, .btn-primary, #loginButton, .submitButton,
+input[type="submit"]:not(.cancel):not(.no-color) {
+  background: var(--chu-action) !important;
+  border-color: var(--chu-action) !important;
+  color: var(--chu-ink-inverse) !important;
+}
+.button.confirm:hover, button.confirm:hover,
+.button.task:hover, .btn-primary:hover, #loginButton:hover,
+input[type="submit"]:not(.cancel):not(.no-color):hover {
+  background: var(--chu-action-hover) !important;
+  border-color: var(--chu-action-hover) !important;
+  color: var(--chu-ink-inverse) !important;
+}
+
+/* Cancel / destructive */
+.button.cancel, button.cancel, input[type="submit"].cancel, .btn-danger {
+  background: var(--chu-surface) !important;
+  border-color: var(--chu-border-control) !important;
+  color: var(--chu-ink-muted) !important;
+}
+.button.cancel:hover, button.cancel:hover, .btn-danger:hover {
+  background: var(--chu-critical-bg) !important;
+  border-color: var(--chu-critical) !important;
+  color: var(--chu-critical) !important;
+}
+
+/* WCAG exempts inactive controls from the contrast minimum, but a disabled
+   button a clinician cannot read is still a usability problem, so this clears
+   4.5:1 anyway (ink-muted on neutral-100 = 6.5:1). Disabled-ness is carried by
+   the flat fill and the cursor, not by low contrast. */
+.button.disabled, button:disabled, .button:disabled, .btn:disabled, .btn.disabled {
+  background: var(--chu-neutral-100) !important;
+  border-color: var(--chu-border-strong) !important;
+  color: var(--chu-ink-muted) !important;
+  box-shadow: none !important;
+  cursor: not-allowed;
+  transform: none !important;
+  opacity: 1 !important;
+}
+
+.button i, button i, .btn i { color: inherit !important; }
+
+
+/* ==========================================================================
+   6. Forms
+   ========================================================================== */
+
+input[type="text"]:where(:not([class*="neuro-"]):not([class*="mr-"]):not([class*="btn-submit"]):not([class*="btn-close-popup"]):not([class*="btn-open-popup"]):not([class*="table-btn-link"]):not(.chu-native)), input[type="password"]:where(:not([class*="neuro-"]):not([class*="mr-"]):not([class*="btn-submit"]):not([class*="btn-close-popup"]):not([class*="btn-open-popup"]):not([class*="table-btn-link"]):not(.chu-native)), input[type="email"]:where(:not([class*="neuro-"]):not([class*="mr-"]):not([class*="btn-submit"]):not([class*="btn-close-popup"]):not([class*="btn-open-popup"]):not([class*="table-btn-link"]):not(.chu-native)),
+input[type="number"]:where(:not([class*="neuro-"]):not([class*="mr-"]):not([class*="btn-submit"]):not([class*="btn-close-popup"]):not([class*="btn-open-popup"]):not([class*="table-btn-link"]):not(.chu-native)), input[type="search"]:where(:not([class*="neuro-"]):not([class*="mr-"]):not([class*="btn-submit"]):not([class*="btn-close-popup"]):not([class*="btn-open-popup"]):not([class*="table-btn-link"]):not(.chu-native)), input[type="tel"]:where(:not([class*="neuro-"]):not([class*="mr-"]):not([class*="btn-submit"]):not([class*="btn-close-popup"]):not([class*="btn-open-popup"]):not([class*="table-btn-link"]):not(.chu-native)),
+input[type="date"]:where(:not([class*="neuro-"]):not([class*="mr-"]):not([class*="btn-submit"]):not([class*="btn-close-popup"]):not([class*="btn-open-popup"]):not([class*="table-btn-link"]):not(.chu-native)), input[type="url"]:where(:not([class*="neuro-"]):not([class*="mr-"]):not([class*="btn-submit"]):not([class*="btn-close-popup"]):not([class*="btn-open-popup"]):not([class*="table-btn-link"]):not(.chu-native)),
+select:where(:not([class*="neuro-"]):not([class*="mr-"]):not([class*="btn-submit"]):not([class*="btn-close-popup"]):not([class*="btn-open-popup"]):not([class*="table-btn-link"]):not(.chu-native)), textarea:where(:not([class*="neuro-"]):not([class*="mr-"]):not([class*="btn-submit"]):not([class*="btn-close-popup"]):not([class*="btn-open-popup"]):not([class*="table-btn-link"]):not(.chu-native)), .form-control:where(:not([class*="neuro-"]):not([class*="mr-"]):not([class*="btn-submit"]):not([class*="btn-close-popup"]):not([class*="btn-open-popup"]):not([class*="table-btn-link"]):not(.chu-native)) {
+  font-family: var(--chu-font-ui) !important;
+  font-size: var(--chu-text-base) !important;
+  color: var(--chu-ink) !important;
+  background: var(--chu-surface) !important;
+  border: 1px solid var(--chu-border-control) !important;
+  border-radius: var(--chu-radius-md) !important;
+  padding: 9px var(--chu-space-3) !important;
+  min-block-size: 40px;
+  box-shadow: none !important;
+  transition: border-color var(--chu-dur-fast) var(--chu-ease-out),
+              box-shadow var(--chu-dur-fast) var(--chu-ease-out);
+}
+input:focus, select:focus, textarea:focus, .form-control:focus {
+  border-color: var(--chu-action-quiet) !important;
+  box-shadow: 0 0 0 3px var(--chu-action-soft) !important;
+  outline: none !important;
+}
+input::placeholder, textarea::placeholder { color: var(--chu-ink-subtle) !important; opacity: 1; }
+
+input[disabled], select[disabled], textarea[disabled], .form-control[disabled] {
+  background: var(--chu-neutral-100) !important;
+  color: var(--chu-ink-subtle) !important;
+  cursor: not-allowed;
+}
+
+/* Same rule as headings: specificity, not !important, so a component that owns
+   a coloured background keeps control of the text inside it. */
+body label, body .form label, body legend {
+  color: var(--chu-ink-muted);
+  font-size: var(--chu-text-sm) !important;
+  font-weight: 500 !important;
+}
+/* Inside anything that paints its own background, follow that component. */
+.diagnosis label, .diagnosis strong, .diagnosis span, .diagnosis small,
+[class*="-header"] label { color: inherit; }
+
+/* Invalid state carries an icon as well as colour, never colour alone. */
+input.error, select.error, textarea.error,
+input[aria-invalid="true"], .field-error input {
+  border-color: var(--chu-critical) !important;
+  box-shadow: 0 0 0 3px var(--chu-critical-bg) !important;
+}
+.error-message, .field-error, .location-error {
+  color: var(--chu-critical) !important;
+  font-size: var(--chu-text-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--chu-space-2);
+}
+.error-message::before, .field-error::before, .location-error::before {
+  content: "\26A0";
+  font-size: 14px;
+  line-height: 1;
+}
+
+fieldset {
+  border: 1px solid var(--chu-border) !important;
+  border-radius: var(--chu-radius-lg);
+  padding: var(--chu-space-4) var(--chu-space-5);
+  background: var(--chu-surface);
+}
+
+
+/* ==========================================================================
+   7. Tables
+   ========================================================================== */
+
+/*
+  Only DATA tables get the card treatment.
+
+  The legacy JSP pages are from an era when tables did layout: legacyui's
+  banner.jsp is a <table id="bannerbar"> holding the logo cell and the whole
+  navigation bar. Styling `table` globally gave that a 12px radius, a border,
+  overflow:hidden and 12px/16px cell padding, which inflated the banner from
+  ~60px to 302px and stacked the nav vertically - the reported blank space.
+
+  A data table is identified by having a header row. `:has()` covers modern
+  browsers; chu-theme.js also stamps .chu-data-table as a belt-and-braces
+  fallback, and layout tables are excluded by name.
+*/
+.chu-layout-table:not(.chu-timepicker),
+#bannerbar, #banner table, #bannerbar td, #bannerbar tr,
+table[role="presentation"], table[role="presentation"] td {
+  background: none !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+  box-shadow: none !important;
+}
+#bannerbar td, table[role="presentation"] td,
+.chu-layout-table:not(.chu-timepicker) td {
+  padding: 0 !important;
+  border: 0 !important;
+}
+
+/*
+  NOTE ON `overflow`: this rule deliberately does NOT clip the table.
+  `overflow: hidden` on a table establishes a scroll container, which silently
+  disables `position: sticky` on its own `thead` - and the imaging module scrolls
+  a long study list inside `#table-scroll` with sticky headers. The rounded
+  corners are produced with per-corner radii on the edge cells instead, which
+  looks identical and leaves sticky working.
+*/
+table:has(> thead > tr > th),
+table:has(> thead > tr > td),
+table.chu-data-table {
+  border-collapse: separate !important;
+  border-spacing: 0;
+  inline-size: 100%;
+  background: var(--chu-surface);
+  border: 1px solid var(--chu-border);
+  border-radius: var(--chu-radius-lg);
+  font-size: var(--chu-text-sm);
+}
+table:has(> thead) > thead > tr > :first-child { border-start-start-radius: var(--chu-radius-lg); }
+table:has(> thead) > thead > tr > :last-child  { border-start-end-radius: var(--chu-radius-lg); }
+table:has(> thead) > tbody > tr:last-child > :first-child { border-end-start-radius: var(--chu-radius-lg); }
+table:has(> thead) > tbody > tr:last-child > :last-child  { border-end-end-radius: var(--chu-radius-lg); }
+table:where(:not([class*="neuro-"]):not([class*="mr-"]):not([data-sortable]):not(.chu-native)) th {
+  background: var(--chu-surface-sunken) !important;
+  color: var(--chu-ink-muted) !important;
+  /* uicommons sets th to its own OpenSansBold face, so this has to be explicit. */
+  font-family: var(--chu-font-ui) !important;
+  font-weight: 600 !important;
+  font-size: var(--chu-text-xs) !important;
+  letter-spacing: .02em;
+  text-align: start !important;
+  padding: var(--chu-space-3) var(--chu-space-4) !important;
+  border: 0 !important;
+  border-block-end: 1px solid var(--chu-border) !important;
+  white-space: nowrap;
+}
+table:where(:not([class*="neuro-"]):not([class*="mr-"]):not([data-sortable]):not(.chu-native)):has(> thead) td,
+table:where(:not([class*="neuro-"]):not([class*="mr-"]):not([data-sortable]):not(.chu-native)).chu-data-table td {
+  padding: var(--chu-space-3) var(--chu-space-4) !important;
+  border: 0 !important;
+  border-block-end: 1px solid var(--chu-border) !important;
+  color: var(--chu-ink) !important;
+  vertical-align: middle;
+}
+table:has(> thead) tbody tr,
+table.chu-data-table tbody tr {
+  transition: background-color var(--chu-dur-fast) var(--chu-ease-out);
+}
+table:has(> thead) tbody tr:hover,
+table.chu-data-table tbody tr:hover { background: var(--chu-surface-sunken) !important; }
+table:has(> thead) tbody tr:last-child td,
+table.chu-data-table tbody tr:last-child td { border-block-end: 0 !important; }
+table tbody tr.selected, table tbody tr[aria-selected="true"] {
+  background: var(--chu-action-soft) !important;
+}
+
+/* Any table wide enough to overflow scrolls in its own box, so the page body
+   never scrolls sideways. */
+.chu-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+
+/* ==========================================================================
+   8. Cards, dashboard widgets, info sections
+   ========================================================================== */
+
+.dashboard,
+.info-section,
+.info-body,
+.main-content,
+.widget,
+.note-container .note {
+  background: var(--chu-surface) !important;
+  border: 1px solid var(--chu-border) !important;
+  border-radius: var(--chu-radius-lg) !important;
+  box-shadow: var(--chu-shadow-1);
+}
+
+.info-section, .widget {
+  overflow: hidden;
+  transition: box-shadow var(--chu-dur-base) var(--chu-ease-out),
+              transform var(--chu-dur-base) var(--chu-ease-out);
+}
+.info-section:hover, .widget:hover {
+  box-shadow: var(--chu-shadow-2);
+  transform: translateY(-2px);
+}
+
+.info-header, .info-section > h3, .widget > h3 {
+  background: var(--chu-surface-sunken) !important;
+  border-block-end: 1px solid var(--chu-border) !important;
+  padding: var(--chu-space-3) var(--chu-space-4) !important;
+  margin: 0 !important;
+  font-family: var(--chu-font-display) !important;
+  font-size: var(--chu-text-base) !important;
+  font-weight: 600 !important;
+  color: var(--chu-ink) !important;
+  display: flex;
+  align-items: center;
+  gap: var(--chu-space-2);
+}
+.info-header i, .info-section > h3 i { color: var(--chu-action-quiet) !important; }
+
+.info-body { border: 0 !important; box-shadow: none !important; border-radius: 0 !important; padding: var(--chu-space-4) !important; }
+
+
+/* ==========================================================================
+   9. Home page - the app tile grid
+   ========================================================================== */
+
+/* #home-container stays a block: its children are Bootstrap .col-* elements
+   that assume a .row parent, and making it a flex container makes them
+   overflow their grid on narrow screens. Only the tile grid is flexed. */
+#home-container {
+  padding-block: var(--chu-space-4);
+}
+#home-container > * {
+  max-inline-size: 100%;
+  min-inline-size: 0;
+}
+/*
+  Two different pages render the same tile markup in different containers:
+  home.gsp uses #apps, systemAdministration.gsp uses #tasks > .homeList.
+  Styling only #apps left System Administration as a single 10-tile column
+  2227px tall with the page's whole width empty beside it.
+*/
+#apps,
+.homeList,
+#tasks .homeList {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: var(--chu-space-4);
+  padding-block: var(--chu-space-4);
+  max-inline-size: 100%;
+}
+#tasks { display: block; }
+
+#apps .app,
+.homeList .app,
+.btn.button.app.big,
+#apps > a,
+.homeList > a.button {
+  background: var(--chu-surface) !important;
+  border: 1px solid var(--chu-border) !important;
+  border-radius: var(--chu-radius-xl) !important;
+  box-shadow: var(--chu-shadow-1) !important;
+  color: var(--chu-ink) !important;
+  inline-size: 172px;
+  min-block-size: 148px;
+  padding: var(--chu-space-5) var(--chu-space-3) !important;
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--chu-space-3);
+  text-align: center;
+  font-family: var(--chu-font-ui) !important;
+  font-size: var(--chu-text-base) !important;
+  font-weight: 600 !important;
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform var(--chu-dur-base) var(--chu-ease-out),
+    box-shadow var(--chu-dur-base) var(--chu-ease-out),
+    border-color var(--chu-dur-base) var(--chu-ease-out);
+}
+
+/* A brand hairline that grows on hover - decorative use of the vivid teal,
+   which is the only place that value is allowed. */
+#apps .app::after,
+.homeList .app::after,
+.btn.button.app.big::after {
+  content: "";
+  position: absolute;
+  inset-block-end: 0;
+  inset-inline-start: 0;
+  inline-size: 100%;
+  block-size: 3px;
+  background: linear-gradient(90deg, var(--chu-brand-vivid), var(--chu-action));
+  transform: scaleX(0);
+  transform-origin: inline-start;
+  transition: transform var(--chu-dur-base) var(--chu-ease-out);
+}
+
+#apps .app:hover,
+.homeList .app:hover,
+.btn.button.app.big:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: var(--chu-shadow-3) !important;
+  border-color: var(--chu-action-quiet) !important;
+  color: var(--chu-action) !important;
+  text-decoration: none !important;
+}
+#apps .app:hover::after,
+.homeList .app:hover::after,
+.btn.button.app.big:hover::after { transform: scaleX(1); }
+
+#apps .app i,
+.homeList .app i,
+.btn.button.app.big i {
+  font-size: 34px !important;
+  color: var(--chu-action) !important;
+  transition: transform var(--chu-dur-base) var(--chu-ease-spring);
+}
+#apps .app:hover i,
+.homeList .app:hover i,
+.btn.button.app.big:hover i { transform: translateY(-2px) scale(1.06); }
+
+/* Upstream home.scss pins .note to min-width:340px with content-box padding,
+   so it measures 388px and cannot fit any phone. Border-box plus a released
+   minimum lets it shrink with the column. */
+.homeNotification, .note-container, .note-container .note {
+  box-sizing: border-box;
+  max-inline-size: 100%;
+}
+.homeNotification, .note-container .note {
+  padding: var(--chu-space-4) var(--chu-space-5) !important;
+  border-inline-start: 4px solid var(--chu-info) !important;
+}
+.note-container .note {
+  min-inline-size: 0 !important;
+  inline-size: 100%;
+  display: block;
+}
+
+
+/* ==========================================================================
+   10. Patient header and chart
+   ========================================================================== */
+
+.new-patient-header, .patient-header {
+  background: var(--chu-surface) !important;
+  border: 1px solid var(--chu-border) !important;
+  border-radius: var(--chu-radius-lg) !important;
+  box-shadow: var(--chu-shadow-1);
+  padding: var(--chu-space-4) var(--chu-space-5) !important;
+  position: relative;
+  overflow: hidden;
+}
+.new-patient-header::before, .patient-header::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: 4px;
+  background: linear-gradient(180deg, var(--chu-brand-vivid), var(--chu-action));
+}
+.new-patient-header .demographics h1,
+.patient-header .demographics h1 {
+  font-family: var(--chu-font-display) !important;
+  font-size: var(--chu-text-2xl) !important;
+  font-weight: 700 !important;
+  color: var(--chu-ink) !important;
+}
+.new-patient-header .demographics .gender-age,
+.patient-header .demographics .gender-age { color: var(--chu-ink-muted) !important; }
+
+/* uicommons renders the family name as 0.6em #888 inside the h1, which lands at
+   9.6px and 3.54:1. A patient's name is the single most important string on the
+   page; it gets full size and full contrast. */
+.new-patient-header .demographics h1 span em,
+.patient-header .demographics h1 span em {
+  color: var(--chu-ink) !important;
+  font-size: 1em !important;
+  font-style: normal !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  letter-spacing: .01em;
+}
+.new-patient-header .identifiers,
+.patient-header .identifiers { color: var(--chu-ink-muted) !important; }
+.new-patient-header .identifiers em,
+.patient-header .identifiers em {
+  color: var(--chu-ink-subtle) !important;
+  font-style: normal;
+  font-size: var(--chu-text-xs);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+/* uicommons colours .action-section links white, because upstream paints that
+   strip on a dark ground. The CHU surface is white, so without this the action
+   links render white-on-white and disappear entirely. */
+.action-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--chu-space-2);
+  padding: var(--chu-space-3) 0 0;
+  background: transparent !important;
+}
+.action-section a,
+.action-section a:link,
+.action-section a:visited {
+  color: var(--chu-action) !important;
+  background: var(--chu-action-soft) !important;
+  border: 1px solid transparent;
+  border-radius: var(--chu-radius-pill);
+  padding: var(--chu-space-2) var(--chu-space-4) !important;
+  min-block-size: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--chu-space-2);
+  font-weight: 600;
+  transition: background-color var(--chu-dur-fast) var(--chu-ease-out),
+              border-color var(--chu-dur-fast) var(--chu-ease-out),
+              transform var(--chu-dur-fast) var(--chu-ease-out);
+}
+.action-section a:hover {
+  background: var(--chu-surface) !important;
+  border-color: var(--chu-action-quiet);
+  transform: translateY(-1px);
+  text-decoration: none !important;
+}
+.action-section a i { color: var(--chu-action) !important; }
+
+.tag {
+  background: var(--chu-action-soft) !important;
+  color: var(--chu-action) !important;
+  border: 0 !important;
+  border-radius: var(--chu-radius-pill) !important;
+  padding: 3px var(--chu-space-3) !important;
+  font-size: var(--chu-text-xs) !important;
+  font-weight: 600 !important;
+}
+
+
+/* ==========================================================================
+   11. Clinical status
+   Colour is never the only carrier. Every status shows a glyph too, so a
+   clinician with a colour vision deficiency reads the same information.
+   ========================================================================== */
+
+.chu-status { display: inline-flex; align-items: center; gap: var(--chu-space-2); font-weight: 600; }
+.chu-status::before { font-size: 13px; line-height: 1; }
+
+.chu-status--critical, .status.critical, td.critical { color: var(--chu-critical) !important; }
+.chu-status--critical::before { content: "\26A0"; }
+
+.chu-status--warning, .status.warning, td.abnormal { color: var(--chu-warning) !important; }
+.chu-status--warning::before { content: "\25B2"; }
+
+.chu-status--success, .status.success, td.normal { color: var(--chu-success) !important; }
+.chu-status--success::before { content: "\2713"; }
+
+.chu-status--info, .status.info { color: var(--chu-info) !important; }
+.chu-status--info::before { content: "\2139"; }
+
+/* Banners.
+   The legacy administration pages emit bare .error / .alert divs with no icon,
+   so severity would be carried by colour alone. Each gets a glyph. */
+.alert, .error, .success, .info, .warning,
+#alertOuterBox, .status-container {
+  border-radius: var(--chu-radius-md) !important;
+  padding: var(--chu-space-3) var(--chu-space-4) !important;
+  border: 1px solid transparent !important;
+  border-inline-start-width: 4px !important;
+  font-size: var(--chu-text-base);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--chu-space-3);
+}
+.alert::before, .error::before, .success::before, .info::before,
+.warning::before, #alertOuterBox::before {
+  flex: none;
+  font-size: 15px;
+  line-height: 1.5;
+  font-weight: 700;
+}
+.error::before, .status-container.error::before { content: "\26A0"; }
+.alert::before, .warning::before            { content: "\25B2"; }
+.success::before                            { content: "\2713"; }
+.info::before, #alertOuterBox::before       { content: "\2139"; }
+.error, .status-container.error {
+  background: var(--chu-critical-bg) !important;
+  border-color: var(--chu-critical) !important;
+  color: var(--chu-critical) !important;
+}
+.alert, .warning {
+  background: var(--chu-warning-bg) !important;
+  border-color: var(--chu-warning) !important;
+  color: var(--chu-warning) !important;
+}
+.success {
+  background: var(--chu-success-bg) !important;
+  border-color: var(--chu-success) !important;
+  color: var(--chu-success) !important;
+}
+.info, #alertOuterBox {
+  background: var(--chu-info-bg) !important;
+  border-color: var(--chu-info) !important;
+  color: var(--chu-info) !important;
+}
+
+
+/* ==========================================================================
+   12. Dialogs
+   ========================================================================== */
+
+.dialog,
+.ngdialog.ngdialog-theme-default .ngdialog-content {
+  background: var(--chu-surface) !important;
+  border: 1px solid var(--chu-border) !important;
+  border-radius: var(--chu-radius-xl) !important;
+  box-shadow: var(--chu-shadow-3) !important;
+  padding: 0 !important;
+  overflow: hidden;
+  animation: chu-dialog-in var(--chu-dur-base) var(--chu-ease-out);
+}
+.dialog .dialog-header {
+  background: var(--chu-surface-sunken) !important;
+  border-block-end: 1px solid var(--chu-border) !important;
+  padding: var(--chu-space-4) var(--chu-space-5) !important;
+  margin: 0 !important;
+}
+.dialog .dialog-header h3 {
+  font-family: var(--chu-font-display) !important;
+  font-size: var(--chu-text-lg) !important;
+  color: var(--chu-ink) !important;
+  margin: 0 !important;
+}
+.dialog .dialog-content { padding: var(--chu-space-5) !important; }
+.dialog .dialog-instructions { color: var(--chu-ink-muted) !important; }
+
+@keyframes chu-dialog-in {
+  from { transform: translateY(10px) scale(.985); }
+  to   { transform: translateY(0) scale(1); }
+}
+
+.simplemodal-overlay { background: rgba(10, 21, 18, .55) !important; }
+
+/*
+  appointmentschedulingui's "show all appointment types" dialog is opened by an
+  Angular ng-click that sets ng-show and then calls
+  emr.setupConfirmationDialog(...).show() in the same tick, before the digest
+  runs. simplemodal therefore measures the dialog while Angular's .ng-hide
+  (display: none !important) is still on it, and jQuery cannot measure an
+  element hidden that way: its measurement swap sets an inline display, which
+  loses to !important. The modal container ends up 2px tall and is centred on
+  that height, so the service list and its close button land below the fold.
+  Every later open is correct, which is why only the first one looks broken.
+
+  Parking the closed dialog off-screen instead of display: none keeps it
+  measurable, so the first open is sized and centred like every other dialog.
+  The entrance animation is suppressed while parked so that dropping .ng-hide
+  still starts chu-dialog-in when the dialog actually opens.
+*/
+#allAppointmentTypesModal.ng-hide {
+  display: block !important;
+  visibility: hidden;
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  animation: none !important;
+}
+
+
+/* ==========================================================================
+   13. Toasts - side element 4
+   Re-skin of the jquery.toastmessage plugin uicommons already loads.
+   ========================================================================== */
+
+.toast-item {
+  background: var(--chu-surface) !important;
+  border: 1px solid var(--chu-border) !important;
+  border-inline-start: 4px solid var(--chu-action) !important;
+  border-radius: var(--chu-radius-md) !important;
+  box-shadow: var(--chu-shadow-3) !important;
+  color: var(--chu-ink) !important;
+  padding: var(--chu-space-3) var(--chu-space-4) !important;
+  font-family: var(--chu-font-ui) !important;
+  font-size: var(--chu-text-base) !important;
+  opacity: 1 !important;
+  animation: chu-toast-in var(--chu-dur-slow) var(--chu-ease-out);
+}
+.toast-item-image-error   { border-inline-start-color: var(--chu-critical) !important; }
+.toast-item-image-alert   { border-inline-start-color: var(--chu-warning) !important; }
+.toast-item-image-success { border-inline-start-color: var(--chu-success) !important; }
+.toast-item-close { opacity: .6; transition: opacity var(--chu-dur-fast) var(--chu-ease-out); }
+.toast-item-close:hover { opacity: 1; }
+
+@keyframes chu-toast-in {
+  from { transform: translateX(24px); }
+  to   { transform: translateX(0); }
+}
+[dir="rtl"] .toast-item { animation-name: chu-toast-in-rtl; }
+@keyframes chu-toast-in-rtl {
+  from { transform: translateX(-24px); }
+  to   { transform: translateX(0); }
+}
+
+
+/* ==========================================================================
+   14. Tabs, pagination, typeahead, dropdown
+   ========================================================================== */
+
+.ui-tabs, .ui-tabs .ui-tabs-nav {
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+}
+.ui-tabs .ui-tabs-nav { display: flex; gap: var(--chu-space-1); border-block-end: 1px solid var(--chu-border) !important; }
+.ui-tabs .ui-tabs-nav li {
+  background: transparent !important;
+  border: 0 !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+}
+.ui-tabs .ui-tabs-nav li a {
+  color: var(--chu-ink-muted) !important;
+  font-weight: 500 !important;
+  padding: var(--chu-space-3) var(--chu-space-4) !important;
+  border-block-end: 2px solid transparent;
+  transition: color var(--chu-dur-fast) var(--chu-ease-out),
+              border-color var(--chu-dur-fast) var(--chu-ease-out);
+}
+.ui-tabs .ui-tabs-nav li a:hover { color: var(--chu-action) !important; border-block-end-color: var(--chu-border-strong); }
+/* The active tab is marked by weight as well as colour, so the state survives
+   a monochrome print and a colour vision deficiency. */
+.ui-tabs .ui-tabs-nav li.ui-tabs-active a,
+.ui-tabs .ui-tabs-nav li.ui-state-active a {
+  color: var(--chu-action) !important;
+  font-weight: 700 !important;
+  border-block-end-color: var(--chu-action) !important;
+}
+
+.dataTables_paginate .paginate_button,
+.pagination a, .pagination span {
+  background: var(--chu-surface) !important;
+  border: 1px solid var(--chu-border) !important;
+  border-radius: var(--chu-radius-sm) !important;
+  color: var(--chu-ink-muted) !important;
+  padding: 6px var(--chu-space-3) !important;
+  min-inline-size: 34px;
+  text-align: center;
+  transition: background-color var(--chu-dur-fast) var(--chu-ease-out),
+              color var(--chu-dur-fast) var(--chu-ease-out);
+}
+.dataTables_paginate .paginate_button:hover,
+.pagination a:hover {
+  background: var(--chu-action-soft) !important;
+  color: var(--chu-action) !important;
+  border-color: var(--chu-action-quiet) !important;
+}
+.dataTables_paginate .paginate_button.current,
+.pagination .active a, .pagination .active span {
+  background: var(--chu-action) !important;
+  border-color: var(--chu-action) !important;
+  color: var(--chu-ink-inverse) !important;
+  font-weight: 600;
+}
+
+.twitter-typeahead .tt-menu, .tt-dropdown-menu, .dropdown-menu,
+#session-location ul.select {
+  background: var(--chu-surface) !important;
+  border: 1px solid var(--chu-border) !important;
+  border-radius: var(--chu-radius-lg) !important;
+  box-shadow: var(--chu-shadow-3) !important;
+  padding: var(--chu-space-2) !important;
+  animation: chu-drop var(--chu-dur-base) var(--chu-ease-out);
+}
+.tt-suggestion, .dropdown-menu > li > a {
+  border-radius: var(--chu-radius-sm) !important;
+  padding: var(--chu-space-2) var(--chu-space-3) !important;
+  color: var(--chu-ink) !important;
+}
+.tt-suggestion:hover, .tt-cursor, .dropdown-menu > li > a:hover {
+  background: var(--chu-action-soft) !important;
+  color: var(--chu-action) !important;
+}
+
+/* Loading indicator - CSS ring in brand colour, replacing the stock GIF. */
+.chu-spinner, #spinner img {
+  inline-size: 22px; block-size: 22px;
+  border: 2.5px solid var(--chu-action-soft);
+  border-block-start-color: var(--chu-action);
+  border-radius: 50%;
+  animation: chu-spin .7s linear infinite;
+  content-visibility: auto;
+}
+#spinner img { content: ""; }
+@keyframes chu-spin { to { transform: rotate(360deg); } }
+
+
+/* ==========================================================================
+   15. Login page
+   The Reference Application hardcodes the OpenMRS logo here and offers no
+   extension point, so the image is swapped in CSS.
+   ========================================================================== */
+
+body.login-page,
+#login-form ~ *,
+body:has(#login-form) {
+  background:
+    radial-gradient(1200px 520px at 15% -10%, var(--chu-teal-100) 0%, transparent 60%),
+    radial-gradient(900px 460px at 105% 110%, var(--chu-blue-100) 0%, transparent 55%),
+    var(--chu-canvas) !important;
+}
+
+body:has(#login-form) .logo { text-align: center; padding-block: var(--chu-space-6) var(--chu-space-4); }
+body:has(#login-form) .logo img {
+  content: url("../images/chu-blida-logo.svg");
+  block-size: auto !important;
+  inline-size: min(340px, 76vw) !important;
+  max-inline-size: none !important;
+}
+
+#login-form {
+  background: var(--chu-surface) !important;
+  border: 1px solid var(--chu-border) !important;
+  border-radius: var(--chu-radius-xl) !important;
+  box-shadow: var(--chu-shadow-3) !important;
+  padding: var(--chu-space-6) !important;
+  max-inline-size: 460px;
+  margin-inline: auto;
+  animation: chu-rise var(--chu-dur-slow) var(--chu-ease-out);
+}
+#login-form input[type="text"], #login-form input[type="password"] {
+  inline-size: 100%;
+  min-block-size: 46px;
+  font-size: var(--chu-text-lg) !important;
+}
+#login-form input[type="submit"], #loginButton {
+  inline-size: 100%;
+  min-block-size: 48px;
+  border-radius: var(--chu-radius-pill) !important;
+  font-size: var(--chu-text-lg) !important;
+  letter-spacing: .01em;
+}
+/*
+  Upstream makes the login fieldset `display:inline-block; min-width:60%` and
+  right-aligns every row, and uicommons gives `ul.select` `min-width:80%`. A
+  long location list therefore sizes the fieldset wider than the form, which
+  clips (the form computes overflow:hidden) and pushes fields out of view -
+  the reported "location list hides the password". Normal block flow removes
+  the whole class of problem.
+*/
+#login-form { overflow: visible !important; }
+#login-form fieldset {
+  display: block !important;
+  min-inline-size: 0 !important;
+  inline-size: 100%;
+  box-sizing: border-box;
+  margin: 0;
+}
+#login-form p,
+#login-form p.left,
+#login-form p.clear {
+  text-align: start !important;
+  margin-inline-end: 0 !important;
+  margin-block-end: var(--chu-space-4);
+  display: block;
+  clear: both;
+}
+#login-form label {
+  display: block;
+  margin-block-end: var(--chu-space-1);
+}
+#login-form input[type="text"],
+#login-form input[type="password"],
+#login-form ul.select {
+  min-inline-size: 0 !important;
+  inline-size: 100% !important;
+  box-sizing: border-box;
+}
+/* The password row carries the reveal toggle; keep them on one line. */
+#login-form p.left:has(#password) { position: relative; }
+#togglePassword {
+  position: absolute;
+  inset-inline-end: var(--chu-space-3);
+  inset-block-end: 14px;
+  cursor: pointer;
+  color: var(--chu-ink-subtle);
+  font-size: 16px;
+}
+#togglePassword:hover { color: var(--chu-action); }
+
+#login-form ul.select li,
+#sessionLocation li {
+  inline-size: 100%;
+  box-sizing: border-box;
+  min-inline-size: 0;
+}
+
+/* A long location list scrolls inside itself instead of growing the page. */
+#login-form ul.select,
+#sessionLocation {
+  max-block-size: 260px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--chu-border) !important;
+  border-radius: var(--chu-radius-md) !important;
+  box-shadow: none !important;
+  background: var(--chu-surface) !important;
+  padding: var(--chu-space-2) !important;
+  animation: none !important;
+}
+
+/* uicommons styles these options as white text on a dark fill and at 0.7em.
+   Both the colour and the size have to be reset explicitly, or the location
+   list is unreadable (white on the light selected fill) once the surface
+   turns white. */
+#login-form .select li,
+#login-form ul.select li {
+  border-radius: var(--chu-radius-md) !important;
+  border: 1px solid var(--chu-border) !important;
+  background: var(--chu-surface) !important;
+  color: var(--chu-ink) !important;
+  font-size: var(--chu-text-base) !important;
+  margin-block-end: var(--chu-space-2);
+  padding: var(--chu-space-3) var(--chu-space-4) !important;
+  min-block-size: 44px;
+  display: flex;
+  align-items: center;
+  transition: border-color var(--chu-dur-fast) var(--chu-ease-out),
+              background-color var(--chu-dur-fast) var(--chu-ease-out);
+}
+#login-form .select li:hover,
+#login-form ul.select li:hover {
+  border-color: var(--chu-action-quiet) !important;
+  background: var(--chu-surface-sunken) !important;
+  color: var(--chu-ink) !important;
+}
+#login-form .select li.selected,
+#login-form ul.select li.selected {
+  border-color: var(--chu-action) !important;
+  background: var(--chu-action-soft) !important;
+  color: var(--chu-action) !important;
+  font-weight: 700;
+}
+/* Selected state carries a check as well as colour. */
+#login-form .select li.selected::before {
+  content: "\2713";
+  margin-inline-end: var(--chu-space-2);
+  font-weight: 700;
+}
+
+@keyframes chu-rise {
+  from { transform: translateY(14px); }
+  to   { transform: translateY(0); }
+}
+
+
+/* ==========================================================================
+   16. Legacy administration (JSP pages)
+   Different markup entirely from the Reference Application, so it needs its
+   own selectors. These pages get tokens and typography, not bespoke layout.
+   ========================================================================== */
+
+#pageBody { background: var(--chu-canvas) !important; font-family: var(--chu-font-ui) !important; }
+
+#banner, #userBar {
+  background: var(--chu-surface) !important;
+  border-block-end: 1px solid var(--chu-border) !important;
+  color: var(--chu-ink-muted) !important;
+  box-shadow: var(--chu-shadow-1);
+}
+#userBar a, #banner a { color: var(--chu-link) !important; }
+
+/*
+  legacyui's banner ships three OpenMRS images (wordmark, white logo, green
+  bar). Hide them and give the banner the CHU Blida mark instead, so the
+  administration pages carry the same identity as the rest of the product.
+*/
+#banner {
+  /*
+    Upstream: `position:absolute; top:0; left:0; z-index:6` with #content
+    reserving 80px of padding underneath it. Putting the banner back in normal
+    flow removes both the overlap and the reserved gap.
+  */
+  position: static !important;
+  background: var(--chu-surface) !important;
+  border-block-end: 1px solid var(--chu-border) !important;
+  padding: var(--chu-space-2) var(--chu-space-5) !important;
+  min-block-size: 56px;
+  display: flex;
+  align-items: center;
+  gap: var(--chu-space-5);
+  inline-size: 100%;
+  box-sizing: border-box;
+  position: relative;
+}
+#banner::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  block-size: 3px;
+  background: linear-gradient(90deg, var(--chu-brand-vivid) 0%, var(--chu-teal-600) 38%, var(--chu-brand-blue) 100%);
+}
+/* #content reserved 80px for the absolutely-positioned banner it no longer has. */
+#pageBody > #content,
+#pageBody > #contentMinimal { padding-block-start: var(--chu-space-5) !important; }
+
+/* Hide the three stock OpenMRS marks. */
+#banner #logosmall img,
+#banner #logocell img,
+#banner .bar-round-reduced50,
+#banner img[src*="openmrs"] { display: none !important; }
+
+/*
+  `#logosmall` is `position:absolute; float:left; margin-left:49px` upstream, so
+  the CHU mark drew on top of the navigation bar. It becomes an ordinary flex
+  item sitting beside the nav instead.
+*/
+#banner a:has(#logosmall) { position: static !important; flex: none; line-height: 0; }
+#banner #logosmall {
+  position: static !important;
+  float: none !important;
+  margin: 0 !important;
+  flex: none;
+  inline-size: 172px;
+  block-size: 32px;
+  background: url("../images/chu-blida-wordmark.svg") no-repeat left center;
+  background-size: contain;
+}
+[dir="rtl"] #banner #logosmall { background-position: right center; }
+#banner #logocell { padding: 0 !important; inline-size: 0 !important; }
+#bannerbar { inline-size: 100%; margin: 0 !important; }
+#banner #barcell { inline-size: 100%; }
+
+/*
+  The green bar is a repeating GIF on .barsmall, and upstream colours the nav
+  white to sit on it. Dropping the image without recolouring the links left
+  blue-on-green. The bar is now part of the white header, with links in the
+  theme's own ink and action colours.
+*/
+#banner .barsmall,
+.barsmall {
+  background: none !important;
+  background-image: none !important;
+  min-block-size: 0 !important;
+  margin: 0 !important;
+  color: var(--chu-ink) !important;
+  display: flex;
+  align-items: center;
+}
+
+/* The nav inside the banner is a horizontal bar, not a stacked card. */
+#banner .navList,
+#barcell .navList {
+  display: flex !important;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 2px;
+  inline-size: auto !important;
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  list-style: none;
+  text-align: start !important;
+  color: var(--chu-ink) !important;
+}
+#banner .navList li,
+#barcell .navList li { margin: 0; padding: 0 !important; }
+#banner .navList a,
+#barcell .navList a,
+#banner .navList a:link,
+#banner .navList a:visited {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 36px;
+  padding: 0 var(--chu-space-3) !important;
+  border-radius: var(--chu-radius-md);
+  color: var(--chu-ink-muted) !important;
+  font-size: var(--chu-text-base) !important;
+  font-weight: 500;
+  text-decoration: none !important;
+  white-space: nowrap;
+  transition: background-color var(--chu-dur-fast) var(--chu-ease-out),
+              color var(--chu-dur-fast) var(--chu-ease-out);
+}
+#banner .navList a:hover,
+#barcell .navList a:hover {
+  background: var(--chu-action-soft) !important;
+  color: var(--chu-action) !important;
+}
+
+/*
+  Advanced Administration (legacyui admin/index.jsp) lays its menu groups out as
+  `<table width="93%">` with three `<td width="30%">` cells. Cells in a single row
+  cannot wrap, so the page simply overflowed on a narrow screen.
+
+  The top-level layout table inside legacy content is promoted to a responsive
+  grid: three columns on a desktop, two on a tablet, one on a phone, with no
+  horizontal scrolling at any width. Data tables (those with a header row) and
+  the banner table are excluded.
+*/
+#pageBody :is(#content, #contentMinimal) > table:where(:not(#bannerbar):not(.chu-data-table):not(:has(> thead))),
+#pageBody :is(#content, #contentMinimal) > form > table:where(:not(#bannerbar):not(.chu-data-table):not(:has(> thead))) {
+  display: block;
+  inline-size: 100% !important;
+  border: 0 !important;
+  background: none !important;
+}
+#pageBody :is(#content, #contentMinimal) table:where(:not(#bannerbar):not(.chu-data-table):not(:has(> thead))) > tbody {
+  display: block;
+  inline-size: 100%;
+}
+#pageBody :is(#content, #contentMinimal) table:where(:not(#bannerbar):not(.chu-data-table):not(:has(> thead))) > tbody > tr {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(clamp(240px, 24vw, 320px), 100%), 1fr));
+  gap: 0 var(--chu-space-6);
+  align-items: start;
+}
+#pageBody :is(#content, #contentMinimal) table:where(:not(#bannerbar):not(.chu-data-table):not(:has(> thead))) > tbody > tr > td {
+  display: block;
+  inline-size: auto !important;
+  max-inline-size: 100%;
+  padding: 0 !important;
+  border: 0 !important;
+  vertical-align: top;
+}
+
+/* The link groups themselves: readable spacing, no runaway width. */
+#pageBody .adminMenuList { margin-block-end: var(--chu-space-5); break-inside: avoid; }
+#pageBody .adminMenuList h4 {
+  font-family: var(--chu-font-display) !important;
+  font-size: var(--chu-text-xs) !important;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--chu-ink-subtle) !important;
+  margin: 0 0 var(--chu-space-2) !important;
+  padding-block-end: var(--chu-space-2);
+  border-block-end: 1px solid var(--chu-border);
+}
+#pageBody .adminMenuList ul { list-style: none; margin: 0 !important; padding: 0 !important; }
+#pageBody .adminMenuList li { margin: 0; }
+#pageBody .adminMenuList a {
+  display: block;
+  padding: var(--chu-space-2) var(--chu-space-3);
+  margin-inline-start: calc(var(--chu-space-3) * -1);
+  border-radius: var(--chu-radius-md);
+  min-block-size: 24px;
+  transition: background-color var(--chu-dur-fast) var(--chu-ease-out),
+              color var(--chu-dur-fast) var(--chu-ease-out);
+}
+#pageBody .adminMenuList a:hover {
+  background: var(--chu-action-soft);
+  color: var(--chu-action) !important;
+  text-decoration: none !important;
+}
+
+/* Legacy float columns (.column / .columnEnd) used on other admin screens. */
+#pageBody .column { float: none !important; inline-size: auto !important; padding: 0 !important; }
+#pageBody .columnEnd { display: none; }
+
+/*
+  Safety net: the app rail is suppressed on legacy pages (they carry their own
+  navigation), but if it ever renders here the fixed 56px column must not sit
+  over the content.
+*/
+body.chu-has-rail #pageBody { padding-inline-start: var(--chu-rail-collapsed); }
+
+@media (max-width: 900px) {
+  #banner { flex-wrap: wrap; gap: var(--chu-space-2); }
+  #banner .navList a, #barcell .navList a { font-size: var(--chu-text-sm) !important; }
+}
+
+#gutter, .navList {
+  background: var(--chu-surface) !important;
+  border: 1px solid var(--chu-border) !important;
+  border-radius: var(--chu-radius-lg) !important;
+  padding: var(--chu-space-2) !important;
+}
+.navList a {
+  display: block;
+  border-radius: var(--chu-radius-sm);
+  padding: var(--chu-space-2) var(--chu-space-3) !important;
+  color: var(--chu-ink-muted) !important;
+  transition: background-color var(--chu-dur-fast) var(--chu-ease-out);
+}
+.navList a:hover { background: var(--chu-action-soft) !important; color: var(--chu-action) !important; text-decoration: none !important; }
+
+#content, #contentMinimal {
+  background: var(--chu-surface) !important;
+  border: 1px solid var(--chu-border);
+  border-radius: var(--chu-radius-lg);
+  box-shadow: var(--chu-shadow-1);
+  padding: var(--chu-space-5) !important;
+  /* Legacy pages size #content with an explicit width and content-box, so the
+     padding added here would otherwise push the page 48px wider than the
+     viewport. */
+  box-sizing: border-box !important;
+  max-inline-size: 100%;
+}
+#pageBody, #pageBody > * { box-sizing: border-box; max-inline-size: 100%; }
+/* The Reference Application uses #content as a plain wrapper, so undo the card
+   treatment there. Legacy pages keep it. */
+body:has(#body-wrapper) #content {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+#footer, #footerInner {
+  background: transparent !important;
+  border-block-start: 1px solid var(--chu-border) !important;
+  color: var(--chu-ink-subtle) !important;
+  font-size: var(--chu-text-xs);
+}
+
+.box, .boxHeader {
+  border-radius: var(--chu-radius-md) !important;
+  border-color: var(--chu-border) !important;
+}
+.boxHeader {
+  background: var(--chu-surface-sunken) !important;
+  color: var(--chu-ink) !important;
+  font-family: var(--chu-font-display) !important;
+  font-weight: 600 !important;
+}
+
+
+/* ==========================================================================
+   17. App rail - side element 1
+   The Reference Application has no persistent navigation; every move goes back
+   through the home page. The rail is built by chu-theme.js from the app menu.
+   ========================================================================== */
+
+.chu-rail {
+  position: fixed;
+  inset-block: var(--chu-header-height) 0;
+  inset-inline-start: 0;
+  z-index: 900;
+  inline-size: var(--chu-rail-collapsed);
+  background: var(--chu-surface);
+  border-inline-end: 1px solid var(--chu-border);
+  display: flex;
+  flex-direction: column;
+  padding-block: var(--chu-space-3);
+  gap: 2px;
+  overflow: hidden visible;
+  transition: inline-size var(--chu-dur-base) var(--chu-ease-out),
+              box-shadow var(--chu-dur-base) var(--chu-ease-out);
+}
+/* inline-size is a layout property, so it is animated only on this one fixed,
+   out-of-flow element where it cannot reflow page content. */
+.chu-rail:hover, .chu-rail:focus-within, .chu-rail.is-pinned {
+  inline-size: var(--chu-rail-expanded);
+  box-shadow: var(--chu-shadow-rail);
+}
+
+.chu-rail__item {
+  display: flex;
+  align-items: center;
+  gap: var(--chu-space-3);
+  min-block-size: 44px;
+  padding-inline: 17px;
+  color: var(--chu-ink-muted);
+  white-space: nowrap;
+  border-inline-start: 3px solid transparent;
+  transition: background-color var(--chu-dur-fast) var(--chu-ease-out),
+              color var(--chu-dur-fast) var(--chu-ease-out);
+}
+.chu-rail__item:hover { background: var(--chu-action-soft); color: var(--chu-action); text-decoration: none; }
+.chu-rail__item.is-active {
+  color: var(--chu-action);
+  font-weight: 600;
+  border-inline-start-color: var(--chu-action);
+  background: var(--chu-action-soft);
+}
+.chu-rail__icon { flex: none; inline-size: 20px; text-align: center; font-size: 17px; color: inherit; }
+.chu-rail__label {
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: opacity var(--chu-dur-base) var(--chu-ease-out),
+              transform var(--chu-dur-base) var(--chu-ease-out);
+}
+[dir="rtl"] .chu-rail__label { transform: translateX(6px); }
+.chu-rail:hover .chu-rail__label,
+.chu-rail:focus-within .chu-rail__label,
+.chu-rail.is-pinned .chu-rail__label { opacity: 1; transform: translateX(0); }
+
+.chu-rail__spacer { flex: 1 1 auto; }
+
+/* Page content shifts over to make room for the collapsed rail only. The
+   expanded state overlays, so hovering never reflows the page underneath. */
+body.chu-has-rail #body-wrapper,
+body.chu-has-rail #breadcrumbs { padding-inline-start: var(--chu-rail-collapsed); }
+
+
+/* ==========================================================================
+   18. Patient slide-over - side element 2
+   ========================================================================== */
+
+.chu-panel {
+  position: fixed;
+  inset-block: var(--chu-header-height) 0;
+  inset-inline-end: 0;
+  z-index: 950;
+  inline-size: min(var(--chu-panel-width), 92vw);
+  background: var(--chu-surface);
+  border-inline-start: 1px solid var(--chu-border);
+  box-shadow: var(--chu-shadow-3);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  visibility: hidden;
+  transition: transform var(--chu-dur-slow) var(--chu-ease-out),
+              visibility 0s linear var(--chu-dur-slow);
+}
+[dir="rtl"] .chu-panel { transform: translateX(-100%); }
+.chu-panel.is-open {
+  transform: translateX(0);
+  visibility: visible;
+  transition: transform var(--chu-dur-slow) var(--chu-ease-out), visibility 0s;
+}
+
+.chu-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--chu-space-3);
+  padding: var(--chu-space-4) var(--chu-space-5);
+  border-block-end: 1px solid var(--chu-border);
+  background: var(--chu-surface-sunken);
+}
+.chu-panel__title {
+  font-family: var(--chu-font-display);
+  font-size: var(--chu-text-lg);
+  font-weight: 600;
+  margin: 0;
+}
+.chu-panel__body { flex: 1 1 auto; overflow-y: auto; padding: var(--chu-space-4) var(--chu-space-5); }
+.chu-panel__section { margin-block-end: var(--chu-space-5); }
+.chu-panel__section h4 {
+  font-size: var(--chu-text-xs) !important;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--chu-ink-subtle) !important;
+  margin: 0 0 var(--chu-space-2) !important;
+}
+.chu-panel__empty { color: var(--chu-ink-subtle); font-size: var(--chu-text-sm); }
+
+.chu-panel__toggle {
+  position: fixed;
+  inset-block-start: calc(var(--chu-header-height) + var(--chu-space-5));
+  inset-inline-end: 0;
+  z-index: 940;
+  display: flex;
+  align-items: center;
+  gap: var(--chu-space-2);
+  padding: var(--chu-space-3) var(--chu-space-4);
+  background: var(--chu-surface);
+  color: var(--chu-action);
+  border: 1px solid var(--chu-border);
+  border-inline-end: 0;
+  border-start-start-radius: var(--chu-radius-md);
+  border-end-start-radius: var(--chu-radius-md);
+  box-shadow: var(--chu-shadow-2);
+  font-weight: 600;
+  font-size: var(--chu-text-sm);
+  cursor: pointer;
+  transition: transform var(--chu-dur-fast) var(--chu-ease-out),
+              background-color var(--chu-dur-fast) var(--chu-ease-out);
+}
+.chu-panel__toggle:hover { background: var(--chu-action-soft); transform: translateX(-2px); }
+[dir="rtl"] .chu-panel__toggle:hover { transform: translateX(2px); }
+.chu-panel.is-open ~ .chu-panel__toggle { opacity: 0; pointer-events: none; }
+
+.chu-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 930;
+  background: rgba(10, 21, 18, .4);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--chu-dur-base) var(--chu-ease-out), visibility 0s linear var(--chu-dur-base);
+}
+.chu-scrim.is-open { opacity: 1; visibility: visible; transition: opacity var(--chu-dur-base) var(--chu-ease-out), visibility 0s; }
+
+
+/* ==========================================================================
+   19. Quick-actions dock - side element 3
+   ========================================================================== */
+
+.chu-dock {
+  position: fixed;
+  inset-block-end: var(--chu-space-5);
+  inset-inline-end: var(--chu-space-5);
+  z-index: 920;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-end;
+  gap: var(--chu-space-3);
+}
+.chu-dock__trigger {
+  inline-size: 52px; block-size: 52px;
+  border-radius: 50%;
+  background: var(--chu-action);
+  color: var(--chu-ink-inverse);
+  border: 0;
+  box-shadow: var(--chu-shadow-3);
+  font-size: 22px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: transform var(--chu-dur-base) var(--chu-ease-spring),
+              background-color var(--chu-dur-fast) var(--chu-ease-out);
+}
+.chu-dock__trigger:hover { background: var(--chu-action-hover); transform: scale(1.06); }
+.chu-dock.is-open .chu-dock__trigger { transform: rotate(45deg); }
+
+.chu-dock__actions {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: var(--chu-space-2);
+  align-items: flex-end;
+}
+.chu-dock__action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--chu-space-2);
+  padding: var(--chu-space-2) var(--chu-space-4);
+  background: var(--chu-surface);
+  color: var(--chu-ink);
+  border: 1px solid var(--chu-border);
+  border-radius: var(--chu-radius-pill);
+  box-shadow: var(--chu-shadow-2);
+  font-size: var(--chu-text-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(8px) scale(.96);
+  pointer-events: none;
+  transition: opacity var(--chu-dur-base) var(--chu-ease-out),
+              transform var(--chu-dur-base) var(--chu-ease-out);
+}
+.chu-dock.is-open .chu-dock__action { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+.chu-dock.is-open .chu-dock__action:nth-child(1) { transition-delay: 0ms; }
+.chu-dock.is-open .chu-dock__action:nth-child(2) { transition-delay: 40ms; }
+.chu-dock.is-open .chu-dock__action:nth-child(3) { transition-delay: 80ms; }
+.chu-dock.is-open .chu-dock__action:nth-child(4) { transition-delay: 120ms; }
+.chu-dock__action:hover { border-color: var(--chu-action-quiet); color: var(--chu-action); text-decoration: none; }
+.chu-dock__action i { color: var(--chu-action); }
+
+
+/* ==========================================================================
+   20. Scroll reveal - side element 5
+   One-shot only. Never replays, and never applied to anything a clinician
+   reads under time pressure.
+   ========================================================================== */
+
+.chu-reveal {
+  transition: opacity var(--chu-dur-slow) var(--chu-ease-out),
+              transform var(--chu-dur-slow) var(--chu-ease-out);
+}
+/*
+  The hidden state is gated on a root class that chu-theme.js adds only after
+  it has confirmed IntersectionObserver exists AND armed a failsafe timer that
+  reveals everything regardless. Without that gate a scroll-reveal that never
+  fires - zero-height element at observe time, frozen timeline, observer never
+  delivered - would hide clinical content permanently.
+*/
+html.chu-reveal-active .chu-reveal:not(.is-visible) {
+  opacity: 0;
+  transform: translateY(12px);
+  will-change: opacity, transform;
+}
+.chu-reveal.is-visible { opacity: 1; transform: none; will-change: auto; }
+
+
+/* ==========================================================================
+   20b. CHU custom modules — compatibility and harmonisation
+
+   Three site-specific modules add their own pages. None of their source is
+   touched: everything below is the theme adapting to them.
+
+     imaging      (custom-imaging-openmrs)     studies, series, instances,
+                                               worklist, Orthanc settings
+     patientview  (Neurosurgery patient view)  10 clinician-facing pages
+     medreport    (Medical reporting)          reports, wizard, settings
+
+   All three decorate with appui:standardEmrPage, so they already inherit the
+   themed header, breadcrumbs and canvas. patientview and medreport namespace
+   every class (.neuro-*, .mr-*) and need only colour harmonisation. imaging
+   uses bare element selectors and needed real compatibility work.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   20b.1 Stacking — imaging modals must sit above the theme chrome
+
+   The imaging overlay is z-index 2, while the app rail is 900 and the
+   quick-actions dock 920, so its popups opened behind them. All theme chrome
+   sits below 1000, so lifting the overlay past that line is enough.
+   patientview modals are already 1000 and medreport 9000.
+   -------------------------------------------------------------------------- */
+.overlay-container,
+.overlay-container.show,
+.popup-box,
+.overlay-content {
+  z-index: 1050 !important;
+}
+/* The rail and dock must never sit over an open modal. */
+body:has(.overlay-container.show) .chu-rail,
+body:has(.overlay-container.show) .chu-dock { z-index: 10 !important; }
+
+/* --------------------------------------------------------------------------
+   20b.2 imaging — scrolling study list with sticky headers
+
+   #table-scroll is a 35em scroll box whose thead is position:sticky. The theme
+   must not add a second scroll container around it, and must not clip it.
+   -------------------------------------------------------------------------- */
+#table-scroll {
+  border: 1px solid var(--chu-border);
+  border-radius: var(--chu-radius-lg);
+  background: var(--chu-surface);
+  box-shadow: var(--chu-shadow-1);
+  overscroll-behavior: contain;
+}
+/* Never wrap or clip a table that already scrolls itself. */
+#table-scroll .chu-table-scroll { overflow: visible !important; }
+#table-scroll table,
+table[data-sortable] {
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+/* Keep the sticky header opaque and on-brand as rows scroll beneath it. */
+#table-scroll thead th,
+table[data-sortable] thead th {
+  background: var(--chu-surface-sunken) !important;
+  color: var(--chu-ink-muted) !important;
+  font-family: var(--chu-font-ui) !important;
+  border-block-end: 1px solid var(--chu-border-strong) !important;
+  box-shadow: 0 1px 0 var(--chu-border);
+}
+/* Sort arrows are drawn with border-color:inherit on th::after, so they follow
+   the header colour on their own. Nothing to restyle here, just do not break
+   them: the arrow lives on the pseudo-element, not on the th border. */
+table[data-sortable] th[data-sorted="true"] { color: var(--chu-action) !important; }
+
+#table-scroll tbody tr:hover,
+table[data-sortable] tbody tr:hover { background: var(--chu-surface-sunken); }
+#table-scroll td,
+table[data-sortable] td {
+  border-block-end: 1px solid var(--chu-border) !important;
+  color: var(--chu-ink) !important;
+}
+/* Study and series identifiers line up column-wise. */
+.uid-td, .description-td, .numbers-td { font-variant-numeric: tabular-nums; }
+
+/* Filter row that the module floats to the top via tfoot. */
+tfoot input {
+  min-block-size: 30px !important;
+  padding: 4px 8px !important;
+  font-size: var(--chu-text-xs) !important;
+  inline-size: 100%;
+  box-sizing: border-box;
+}
+
+/* --------------------------------------------------------------------------
+   20b.3 imaging — colour harmonisation only, geometry left alone
+
+   The module colour-codes its actions. Those distinctions are preserved and
+   mapped onto CHU tokens, so the meaning survives and the palette matches.
+   Every pairing below clears 4.5:1 with white text.
+   -------------------------------------------------------------------------- */
+.btn-submit, .btn-open-popup-sync {            /* was #009384 OpenMRS teal */
+  background: var(--chu-action) !important;
+  color: var(--chu-ink-inverse) !important;
+}
+.btn-submit:hover, .btn-open-popup-sync:hover { background: var(--chu-action-hover) !important; }
+
+.btn-open-popup-newStudies {                   /* was #EEA616 amber */
+  background: var(--chu-warning) !important;
+  color: var(--chu-ink-inverse) !important;
+}
+.btn-open-popup-upload {                       /* was #5B57A6 violet */
+  background: var(--chu-link) !important;
+  color: var(--chu-ink-inverse) !important;
+}
+.btn-close-popup {                             /* was #F26522 orange */
+  background: var(--chu-surface) !important;
+  color: var(--chu-ink-muted) !important;
+  border: 1px solid var(--chu-border-control) !important;
+}
+.btn-close-popup:hover {
+  background: var(--chu-critical-bg) !important;
+  color: var(--chu-critical) !important;
+  border-color: var(--chu-critical) !important;
+}
+.btn-submit, .btn-close-popup, .btn-open-popup-sync,
+.btn-open-popup-newStudies, .btn-open-popup-upload {
+  font-family: var(--chu-font-ui);
+  font-weight: 600;
+  border-radius: var(--chu-radius-md) !important;
+  padding: 9px var(--chu-space-4);
+  min-block-size: 40px;
+  transition: background-color var(--chu-dur-fast) var(--chu-ease-out),
+              transform var(--chu-dur-fast) var(--chu-ease-out);
+}
+.btn-submit:hover, .btn-close-popup:hover, .btn-open-popup-sync:hover,
+.btn-open-popup-newStudies:hover, .btn-open-popup-upload:hover { transform: translateY(-1px); }
+
+/* An inline link that happens to be a button element. Keep it a link. */
+.table-btn-link {
+  color: var(--chu-link) !important;
+  background: none !important;
+  border: 0 !important;
+  padding: 0 !important;
+  min-block-size: 0 !important;
+  box-shadow: none !important;
+  font: inherit !important;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.table-btn-link:hover { color: var(--chu-link-hover) !important; transform: none !important; }
+
+.popup-box {
+  border-radius: var(--chu-radius-xl) !important;
+  box-shadow: var(--chu-shadow-3) !important;
+  max-inline-size: min(680px, 92vw);
+  inline-size: auto !important;
+}
+.overlay-container { background: rgba(10, 21, 18, .55) !important; }
+.form-container {
+  border: 1px solid var(--chu-border) !important;
+  border-radius: var(--chu-radius-lg) !important;
+  box-shadow: var(--chu-shadow-1) !important;
+  background: var(--chu-surface);
+}
+.form-input, .rpInput {
+  border: 1px solid var(--chu-border-control) !important;
+  border-radius: var(--chu-radius-md) !important;
+  font-family: var(--chu-font-ui) !important;
+}
+.form-input:focus, .rpInput:focus {
+  border-color: var(--chu-action-quiet) !important;
+  box-shadow: 0 0 0 3px var(--chu-action-soft) !important;
+  outline: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   20b.4 patientview and medreport — fully namespaced, colour only
+
+   Both own their layout entirely; the theme supplies typography and brand
+   colour and otherwise stays out of the way.
+   -------------------------------------------------------------------------- */
+/*
+  The module paints its patient header and score chips with its own gradients
+  (#2c5aa0 blue, #28a745 green). White text on those is fine, but the palette is
+  not CHU's. Re-pointed at theme tokens; the text stays white.
+*/
+.neuro-patient-header {
+  background: linear-gradient(135deg, var(--chu-teal-900) 0%, var(--chu-action) 100%) !important;
+  border-radius: var(--chu-radius-lg);
+  box-shadow: var(--chu-shadow-1);
+}
+.neuro-gcs-score, .neuro-action-btn {
+  background: linear-gradient(135deg, var(--chu-action) 0%, var(--chu-teal-700) 100%) !important;
+  color: var(--chu-ink-inverse) !important;
+}
+.neuro-patient-alerts .neuro-alert-panel {
+  background: var(--chu-surface) !important;
+  color: var(--chu-critical) !important;
+  border-inline-start: 4px solid var(--chu-critical) !important;
+  border-radius: var(--chu-radius-md);
+}
+/*
+  Two of the module's own text colours fall under AA on its light panels: the
+  surgery date at 3.78:1 (#007bff) and the surgeon name at 4.45:1 (#6c757d).
+  Both are present with or without the theme, and both are re-pointed at theme
+  tokens rather than left marginal.
+*/
+.neuro-surgery-date { color: var(--chu-link) !important; }
+.neuro-surgeon, .neuro-outcome, .neuro-no-data { color: var(--chu-ink-muted) !important; }
+
+.neuro-panel, .mr-card, .mr-panel {
+  border-color: var(--chu-border) !important;
+  border-radius: var(--chu-radius-lg) !important;
+  box-shadow: var(--chu-shadow-1) !important;
+}
+.neuro-panel-header h2, .neuro-patient-info h1, .mr-card h2, .mr-card h3 {
+  font-family: var(--chu-font-display) !important;
+  color: var(--chu-ink) !important;
+}
+.neuro-btn-primary, .mr-btn-primary {
+  background: var(--chu-action) !important;
+  border-color: var(--chu-action) !important;
+  color: var(--chu-ink-inverse) !important;
+}
+.neuro-btn-primary:hover, .mr-btn-primary:hover {
+  background: var(--chu-action-hover) !important;
+  border-color: var(--chu-action-hover) !important;
+}
+.neuro-btn-secondary, .mr-btn:not(.mr-btn-primary) {
+  background: var(--chu-surface) !important;
+  border: 1px solid var(--chu-border-control) !important;
+  color: var(--chu-ink-muted) !important;
+}
+.neuro-btn-secondary:hover, .mr-btn:not(.mr-btn-primary):hover {
+  border-color: var(--chu-action-quiet) !important;
+  color: var(--chu-action) !important;
+}
+.neuro-btn, .neuro-action-btn, .mr-btn {
+  font-family: var(--chu-font-ui) !important;
+  font-weight: 600 !important;
+  border-radius: var(--chu-radius-md) !important;
+  min-block-size: 40px;
+}
+/* Clinical scores and dates must line up. */
+.neuro-score-value, .neuro-gcs-score, .neuro-surgery-date,
+.neuro-identifier, .mr-date { font-variant-numeric: tabular-nums; }
+
+.neuro-modal-content, .mr-dialog {
+  border-radius: var(--chu-radius-xl) !important;
+  box-shadow: var(--chu-shadow-3) !important;
+}
+
+/* Their alert panels carry a glyph, not colour alone. */
+.neuro-alert-item::before { content: "\26A0"; margin-inline-end: var(--chu-space-2); }
+
+
+/* ==========================================================================
+   20c. Reported UI defects — v1.0.7
+
+   Each block names the report item it closes. Items judged out of the theme's
+   scope are listed in CHANGELOG.md with the reason and the real fix location.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Report 7 and 10 — action-section headings were black on a dark ground
+
+   coreapps renders `<h3>` inside `<ul class="float-left">` in .action-section
+   and paints it dark. The theme's generic heading rule repainted it near-black.
+   The generic rule no longer uses !important (see the structural note above);
+   these headings are additionally restyled as light section labels so they read
+   as part of the theme rather than as an upstream leftover.
+   -------------------------------------------------------------------------- */
+.action-section ul > h3,
+.action-section h3,
+#overall-actions h3,
+.info-section > h3 {
+  background: var(--chu-surface-sunken) !important;
+  color: var(--chu-ink-muted) !important;
+  font-family: var(--chu-font-ui) !important;
+  font-size: var(--chu-text-xs) !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  margin: 0 0 var(--chu-space-2) !important;
+  padding: var(--chu-space-2) var(--chu-space-3) !important;
+  border: 0 !important;
+  border-inline-start: 3px solid var(--chu-action) !important;
+  border-radius: var(--chu-radius-sm);
+  text-shadow: none !important;
+}
+/* The list holding the actions is a plain stack, not a float row. */
+.action-section ul {
+  float: none !important;
+  display: flex;
+  flex-direction: column;
+  gap: var(--chu-space-2);
+  list-style: none;
+  margin: 0 0 var(--chu-space-5) !important;
+  padding: 0 !important;
+}
+.action-section ul > li { float: none !important; inline-size: 100%; }
+.action-section ul > li > a { inline-size: 100%; }
+
+/* --------------------------------------------------------------------------
+   Report 1 — diagnosis chips unreadable
+
+   coreapps encounterDiagnoses.scss paints .diagnosis `#006191` with white text,
+   which is legible on its own. The theme's generic label rule repainted the
+   PRIMARY / CONFIRMED labels dark-on-dark. Fixed structurally above; pinned
+   here so the chip cannot regress, and re-pointed at the CHU palette.
+   -------------------------------------------------------------------------- */
+.diagnosis {
+  background: var(--chu-action) !important;
+  color: var(--chu-ink-inverse) !important;
+  border-radius: var(--chu-radius-md) !important;
+  padding: var(--chu-space-2) var(--chu-space-3) !important;
+}
+.diagnosis.primary { background: var(--chu-teal-900) !important; }
+.diagnosis .matched-name,
+.diagnosis .preferred-name,
+.diagnosis .code,
+.diagnosis .actions label,
+.diagnosis .actions { color: var(--chu-ink-inverse) !important; }
+.diagnosis .code {
+  /* A translucent white overlay lightened the fill to 4.29:1 against white
+     text. Darkening instead keeps the chip readable on both variants. */
+  background: rgba(0, 0, 0, .22);
+  border-radius: var(--chu-radius-sm);
+  padding: 1px var(--chu-space-2);
+  font-variant-numeric: tabular-nums;
+}
+.diagnosis .actions label { font-weight: 500 !important; }
+.diagnosis .delete-action,
+.diagnosis .delete-item { color: rgba(255, 255, 255, .8) !important; }
+.diagnosis .delete-action:hover,
+.diagnosis .delete-item:hover { color: var(--chu-ink-inverse) !important; }
+
+/* --------------------------------------------------------------------------
+   Reports 3 and 5 — a second empty box inside the service selector
+
+   appointmentschedulingui's selectMultipleAppointmentTypes partial nests
+   `input.selectmultipleInput` inside `.selectmultipleBox`, and the box is
+   already the visual field. The theme's generic input styling gave the inner
+   input its own border, radius and 40px height, so it read as a stray box
+   beside the real one.
+
+   The container becomes the field; the input inside it is bare. Applied to the
+   widget's own class names, so it cannot affect ordinary inputs.
+   -------------------------------------------------------------------------- */
+.selectmultipleWidget .selectmultipleBox {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--chu-space-2);
+  min-block-size: 40px;
+  padding: var(--chu-space-1) var(--chu-space-2);
+  background: var(--chu-surface);
+  border: 1px solid var(--chu-border-control);
+  border-radius: var(--chu-radius-md);
+  box-sizing: border-box;
+}
+.selectmultipleWidget .selectmultipleBox:focus-within {
+  border-color: var(--chu-action-quiet);
+  box-shadow: 0 0 0 3px var(--chu-action-soft);
+}
+.selectmultipleWidget .multiselectTypeahead { flex: 1 1 12ch; min-inline-size: 0; }
+.selectmultipleWidget input.selectmultipleInput,
+.selectmultipleWidget .selectmultipleBox input[type="text"] {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+  min-block-size: 30px !important;
+  padding: 0 !important;
+  inline-size: 100% !important;
+}
+/* Selected services read as chips. */
+.selectmultipleWidget .selectedAppointmentTypesList {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--chu-space-2);
+  background: var(--chu-action-soft);
+  color: var(--chu-action);
+  border-radius: var(--chu-radius-pill);
+  padding: 2px var(--chu-space-3);
+  font-size: var(--chu-text-sm);
+  font-weight: 600;
+}
+.selectmultipleWidget .selectedAppointmentTypesList i { cursor: pointer; opacity: .7; }
+.selectmultipleWidget .selectedAppointmentTypesList i:hover { opacity: 1; }
+.selectmultipleWidget .viewAllAppointmentTypes { margin-block-start: var(--chu-space-2); }
+.selectmultipleWidget .viewAllAppointmentTypes a { color: var(--chu-link); cursor: pointer; }
+
+/* --------------------------------------------------------------------------
+   Report 4 — timepicker arrows invisible, controls unstyled
+
+   appointmentschedulingui uses the AngularJS UI Bootstrap <timepicker>, whose
+   increment and decrement controls are `<span class="glyphicon
+   glyphicon-chevron-up">`. Glyphicons are a Bootstrap 3 font and the Reference
+   Application ships Bootstrap 4, which removed them — the icon font simply is
+   not present, so those controls have never had a visible glyph.
+
+   Rather than add a font, the chevrons are drawn in CSS. This is independent of
+   any icon set and cannot break again if Bootstrap changes.
+   -------------------------------------------------------------------------- */
+.glyphicon-chevron-up,
+.glyphicon-chevron-down {
+  display: inline-block;
+  inline-size: 0;
+  block-size: 0;
+  border-inline: 5px solid transparent;
+  vertical-align: middle;
+}
+.glyphicon-chevron-up { border-block-end: 6px solid currentColor; }
+.glyphicon-chevron-down { border-block-start: 6px solid currentColor; }
+
+/* The timepicker is a <table>; present it as one control group. */
+table:has(> tbody > tr > td > input[ng-model="hours"]),
+.chu-timepicker {
+  background: var(--chu-surface-sunken);
+  border: 1px solid var(--chu-border) !important;
+  border-radius: var(--chu-radius-md);
+  padding: var(--chu-space-1);
+  display: inline-table;
+  inline-size: auto !important;
+}
+.chu-timepicker td { padding: 2px !important; border: 0 !important; text-align: center; }
+.chu-timepicker input {
+  inline-size: 56px !important;
+  min-block-size: 32px !important;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  padding: 4px !important;
+}
+.chu-timepicker a,
+.chu-timepicker .btn-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: 32px;
+  min-block-size: 26px;
+  color: var(--chu-action-quiet) !important;
+  background: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  cursor: pointer;
+  border-radius: var(--chu-radius-sm);
+}
+.chu-timepicker a:hover, .chu-timepicker .btn-link:hover {
+  background: var(--chu-action-soft) !important;
+  color: var(--chu-action) !important;
+}
+/* The AM/PM toggle must look like the button it is. */
+.chu-timepicker button {
+  min-block-size: 32px !important;
+  padding: 4px var(--chu-space-3) !important;
+  font-weight: 600 !important;
+  border: 1px solid var(--chu-border-control) !important;
+  border-radius: var(--chu-radius-sm) !important;
+  background: var(--chu-surface) !important;
+  color: var(--chu-ink) !important;
+}
+.chu-timepicker button:hover {
+  background: var(--chu-action-soft) !important;
+  border-color: var(--chu-action-quiet) !important;
+  color: var(--chu-action) !important;
+}
+/* The date field and its calendar trigger. */
+.angular-datepicker { display: inline-flex; align-items: center; gap: var(--chu-space-2); }
+.angular-datepicker input { min-inline-size: 12rem; }
+
+/* --------------------------------------------------------------------------
+   Report 8a — the neurosurgery sidebar covered the page
+
+   REGRESSION INTRODUCED IN 1.0.6. patientview.css already sets .neuro-sidebar
+   fully: flex column, min-width 220, white, radius, padding, shadow, and
+   `position: sticky; top: 20px` — plus a `@media (max-width: 900px)` rule that
+   switches it to `flex-direction: row; width: 100%; position: static`.
+
+   1.0.6 re-declared those same layout properties OUTSIDE any media query, so
+   below 900px the theme's `column` and `sticky` beat the module's responsive
+   rule and the sidebar rendered as a full-width, screen-pinned stack.
+
+   RULE: never re-declare a layout property a module already sets responsively.
+   Only the active-state marker is styled here; the module owns the layout.
+   -------------------------------------------------------------------------- */
+.neuro-nav-item {
+  box-sizing: border-box;
+  border-inline-start: 3px solid transparent;
+  transition: background-color var(--chu-dur-fast) var(--chu-ease-out),
+              color var(--chu-dur-fast) var(--chu-ease-out);
+}
+.neuro-nav-item:hover {
+  background: var(--chu-action-soft);
+  color: var(--chu-action) !important;
+  text-decoration: none !important;
+}
+.neuro-nav-item.neuro-active {
+  background: var(--chu-action-soft);
+  color: var(--chu-action) !important;
+  font-weight: 700;
+  border-inline-start-color: var(--chu-action);
+}
+@media (max-width: 900px) {
+  /* The module turns the rail horizontal here; move the marker to match. */
+  .neuro-nav-item { border-inline-start: 0; border-block-end: 3px solid transparent; }
+  .neuro-nav-item.neuro-active { border-block-end-color: var(--chu-action); }
+}
+
+/* --------------------------------------------------------------------------
+   Report 11 — patient action order
+
+   The actions are app-framework extensions contributed by six different
+   modules, each rendered as `<li><a id="{extension id}">`. The authoritative
+   place to order them is each extension's `order` property, which belongs to
+   the modules and to deployment configuration, not to a theme.
+
+   Presentation order is set here instead, with flex `order` keyed on a
+   substring of the extension id so it survives the groupId/artifactId prefixes
+   the modules expand at build time. Anything unmatched keeps the default
+   (order: 50) and simply stays where it was — a new action can never disappear.
+
+   To add one: give it an `order` between 10 and 130 in the list below.
+   -------------------------------------------------------------------------- */
+.action-section ul > li { order: 50; }
+
+/*
+  DECLARATION ORDER MATTERS. These selectors all have the same specificity, so
+  the last match wins. Module-wide fallbacks are declared FIRST and per-action
+  overrides LAST — otherwise `medreport.patientDashboard.imagingReports` matches
+  both [id*="medreport"] and [id*="imagingReports"] and takes whichever comes
+  later, which put Attachments above Imaging reports on the first attempt.
+*/
+
+/* 1. module-wide fallbacks (least specific intent) */
+.action-section ul > li:has(> a[id*="patientview"]) { order: 30; }
+.action-section ul > li:has(> a[id*="medreport"]) { order: 80; }
+.action-section ul > li:has(> a[id*="registrationapp"]) { order: 100; }
+
+/* 2. per-action placement (wins over the fallback above) */
+.action-section ul > li:has(> a[id*="startVisit"]),
+.action-section ul > li:has(> a[id*="startConsultation"]) { order: 10; }
+
+.action-section ul > li:has(> a[id*="addPastVisit"]),
+.action-section ul > li:has(> a[id*="previousConsultation"]),
+.action-section ul > li:has(> a[id*="retrospective"]) { order: 20; }
+
+.action-section ul > li:has(> a[id*="neurosurgery"]),
+.action-section ul > li:has(> a[id*="patientDashboard"]) { order: 30; }
+
+.action-section ul > li:has(> a[id*="appointmentTime"]),
+.action-section ul > li:has(> a[id*="scheduleAppointment"]) { order: 40; }
+
+.action-section ul > li:has(> a[id*="appointmentRequest"]),
+.action-section ul > li:has(> a[id*="requestAppointment"]) { order: 45; }
+
+.action-section ul > li:has(> a[id*="imaging"]),
+.action-section ul > li:has(> a[id*="imagingReports"]) { order: 55; }
+
+.action-section ul > li:has(> a[id*="attachment"]) { order: 60; }
+
+.action-section ul > li:has(> a[id*="assistant"]),
+.action-section ul > li:has(> a[id*="clinicalAgent"]) { order: 70; }
+
+.action-section ul > li:has(> a[id*="generateReport"]) { order: 80; }
+
+.action-section ul > li:has(> a[id*="mergeVisits"]),
+.action-section ul > li:has(> a[id*="mergeConsultation"]) { order: 90; }
+
+.action-section ul > li:has(> a[id*="editRegistration"]) { order: 100; }
+
+/* 3. irreversible actions last */
+.action-section ul > li:has(> a[id*="markPatientDeceased"]),
+.action-section ul > li:has(> a[id*="deceased"]) { order: 120; }
+
+.action-section ul > li:has(> a[id*="deletePatient"]) { order: 130; }
+
+.action-section ul > li:has(> a[id*="deceased"]) > a,
+.action-section ul > li:has(> a[id*="deletePatient"]) > a {
+  background: var(--chu-surface) !important;
+  border: 1px solid var(--chu-border-control) !important;
+  color: var(--chu-ink-muted) !important;
+}
+.action-section ul > li:has(> a[id*="deceased"]) > a:hover,
+.action-section ul > li:has(> a[id*="deletePatient"]) > a:hover {
+  background: var(--chu-critical-bg) !important;
+  border-color: var(--chu-critical) !important;
+  color: var(--chu-critical) !important;
+}
+.action-section ul > li:has(> a[id*="deceased"]) > a i,
+.action-section ul > li:has(> a[id*="deletePatient"]) > a i { color: inherit !important; }
+/* A rule above the destructive pair, drawn on the first of them. */
+.action-section ul > li:has(> a[id*="deceased"]) {
+  margin-block-start: var(--chu-space-3);
+  padding-block-start: var(--chu-space-3);
+  border-block-start: 1px solid var(--chu-border);
+}
+
+/* ==========================================================================
+   21. Responsive
+   Clinical workstations, ward tablets and phones at the bedside.
+   ========================================================================== */
+
+/* Large desktop and below: rein in the app tiles. */
+@media (max-width: 1280px) {
+  #apps .app, .homeList .app, .btn.button.app.big { inline-size: 156px; min-block-size: 136px; }
+}
+
+/* Tablet landscape and below */
+@media (max-width: 1024px) {
+  :root { --chu-content-max: 100%; }
+  #content, #breadcrumbs { padding-inline: var(--chu-space-4); }
+  .chu-panel { inline-size: min(var(--chu-panel-width), 88vw); }
+}
+
+/* Tablet portrait and below - the rail becomes an off-canvas drawer. */
+@media (max-width: 900px) {
+  .chu-rail {
+    inline-size: var(--chu-rail-expanded);
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition: transform var(--chu-dur-slow) var(--chu-ease-out),
+                visibility 0s linear var(--chu-dur-slow);
+    box-shadow: var(--chu-shadow-rail);
+  }
+  [dir="rtl"] .chu-rail { transform: translateX(100%); }
+  .chu-rail.is-open {
+    transform: translateX(0);
+    visibility: visible;
+    transition: transform var(--chu-dur-slow) var(--chu-ease-out), visibility 0s;
+  }
+  .chu-rail .chu-rail__label { opacity: 1; transform: none; }
+  body.chu-has-rail #body-wrapper,
+  body.chu-has-rail #breadcrumbs { padding-inline-start: 0; }
+  .chu-rail__burger { display: inline-flex !important; }
+}
+
+/* Phone */
+@media (max-width: 640px) {
+  body { font-size: var(--chu-text-base) !important; }
+  #content, #breadcrumbs { padding-inline: var(--chu-space-3); }
+  #content { padding-block: var(--chu-space-4) var(--chu-space-7); }
+
+  header { padding-inline: var(--chu-space-3) !important; }
+  header .logo img { block-size: 26px; max-inline-size: 150px; }
+  /* Swap the wide lockup for the monogram - the wordmark is illegible at this size. */
+  header .logo img[src*="wordmark"] { content: url("../images/chu-blida-mark.svg"); max-inline-size: 34px; }
+  /* Collapse the header controls to icons only. Without this the logout label
+     alone is 114px and pushes the header past the viewport. */
+  header .user-options { gap: 0; }
+  header .user-options > li { padding: var(--chu-space-2) !important; }
+  header .user-options .identifier,
+  header .user-options .change-location { min-inline-size: 0; overflow: hidden; }
+  header .user-options .identifier span,
+  header .user-options .change-location span,
+  header .user-options .change-location #selected-location { display: none; }
+  /* The logout link keeps its icon; the word is dropped but stays announced. */
+  header .user-options .logout a {
+    font-size: 0;
+    gap: 0;
+    min-inline-size: 44px;
+    justify-content: center;
+  }
+  header .user-options .logout a i { font-size: 16px; }
+
+  #apps, .homeList, #home-container { gap: var(--chu-space-3); }
+  #apps .app, .homeList .app, .btn.button.app.big {
+    inline-size: calc(50% - var(--chu-space-2));
+    min-block-size: 118px;
+    padding: var(--chu-space-4) var(--chu-space-2) !important;
+    font-size: var(--chu-text-sm) !important;
+  }
+  #apps .app i, .homeList .app i, .btn.button.app.big i { font-size: 26px !important; }
+
+  /*
+    Backstop for tables that arrive after chu-theme.js has run - the
+    administration screens inject theirs from Angular. Until the observer
+    wraps them they must still not widen the page.
+  */
+  table:not(.chu-stack):not(.chu-layout-table) {
+    display: block;
+    overflow-x: auto;
+    max-inline-size: 100%;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Dense tables become card-like stacks rather than horizontal scrollers,
+     wherever the markup declares its column labels. */
+  table.chu-stack thead { display: none; }
+  table.chu-stack, table.chu-stack tbody, table.chu-stack tr, table.chu-stack td { display: block; inline-size: 100%; }
+  table.chu-stack tr {
+    border: 1px solid var(--chu-border);
+    border-radius: var(--chu-radius-md);
+    margin-block-end: var(--chu-space-3);
+    padding: var(--chu-space-2);
+  }
+  table.chu-stack td { border: 0 !important; padding: var(--chu-space-2) !important; display: flex; justify-content: space-between; gap: var(--chu-space-3); }
+  table.chu-stack td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: var(--chu-ink-subtle);
+    font-size: var(--chu-text-xs);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+  }
+
+  .chu-panel { inline-size: 100vw; inset-block-start: 0; }
+  .chu-dock { inset-block-end: var(--chu-space-4); inset-inline-end: var(--chu-space-4); }
+  .chu-dock__action { font-size: var(--chu-text-xs); }
+  #login-form { padding: var(--chu-space-5) var(--chu-space-4) !important; }
+}
+
+/* Touch: every target reaches 44px regardless of viewport. */
+@media (pointer: coarse) {
+  .button, button, input[type="submit"], input[type="button"], a.button, .btn,
+  .chu-rail__item, .chu-dock__action, header .user-options > li,
+  header .user-options > li a, #breadcrumbs a, .navList a,
+  #login-form .select li, .action-section a {
+    min-block-size: 44px;
+  }
+  header .user-options > li a, #breadcrumbs a { display: inline-flex; align-items: center; }
+  table td, table th { padding-block: var(--chu-space-3) !important; }
+}
+
+
+/* ==========================================================================
+   22. Right-to-left
+   Most of the sheet uses logical properties and needs nothing here. These are
+   the cases that cannot be expressed logically.
+   ========================================================================== */
+
+/* The base `body` rule needs !important to beat the compiled upstream sheet, so
+   these must carry it too or Arabic silently falls back to a system face. */
+[dir="rtl"] body,
+[dir="rtl"] input, [dir="rtl"] select, [dir="rtl"] textarea, [dir="rtl"] button,
+[dir="rtl"] .button, [dir="rtl"] table, [dir="rtl"] th, [dir="rtl"] td,
+[dir="rtl"] label, [dir="rtl"] p, [dir="rtl"] li, [dir="rtl"] a {
+  font-family: var(--chu-font-display) !important;
+}
+[dir="rtl"] body { line-height: 1.75 !important; }
+
+/* Directional glyphs must mirror; non-directional ones must not. */
+[dir="rtl"] .icon-chevron-right,
+[dir="rtl"] .icon-chevron-left,
+[dir="rtl"] .icon-caret-right,
+[dir="rtl"] .icon-caret-left,
+[dir="rtl"] .icon-arrow-right,
+[dir="rtl"] .icon-arrow-left,
+[dir="rtl"] .fa-chevron-right,
+[dir="rtl"] .fa-chevron-left,
+[dir="rtl"] .fa-arrow-right,
+[dir="rtl"] .fa-arrow-left,
+[dir="rtl"] .fa-angle-right,
+[dir="rtl"] .fa-angle-left { transform: scaleX(-1); }
+
+[dir="rtl"] header::before {
+  background: linear-gradient(270deg,
+      var(--chu-brand-vivid) 0%, var(--chu-teal-600) 38%, var(--chu-brand-blue) 100%);
+}
+[dir="rtl"] #apps .app::after,
+[dir="rtl"] .btn.button.app.big::after { transform-origin: right; }
+
+/* Numbers stay left-to-right inside right-to-left text - a reversed patient
+   identifier or dose is a safety problem. */
+[dir="rtl"] .chu-numeric,
+[dir="rtl"] .identifiers span,
+[dir="rtl"] input[type="number"],
+[dir="rtl"] td.numeric { direction: ltr; unicode-bidi: embed; text-align: start; }
+
+
+/* ==========================================================================
+   23. Print
+   Clinical documents get printed. Strip the interface, keep the record.
+   ========================================================================== */
+
+@media print {
+  header, #breadcrumbs, .chu-rail, .chu-panel, .chu-panel__toggle,
+  .chu-dock, .chu-scrim, .chu-skip-link, #footer, #gutter, .navList,
+  .button, button, input[type="submit"], .toast-item {
+    display: none !important;
+  }
+
+  html, body {
+    background: #FFF !important;
+    color: #000 !important;
+    font-size: 11pt !important;
+  }
+  #body-wrapper, #content {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-inline-size: none !important;
+    box-shadow: none !important;
+    border: 0 !important;
+  }
+  .chu-reveal { opacity: 1 !important; transform: none !important; }
+
+  .info-section, .dashboard, .new-patient-header, .patient-header {
+    box-shadow: none !important;
+    border: 1px solid #999 !important;
+    break-inside: avoid;
+  }
+  table { border: 1px solid #666 !important; break-inside: auto; }
+  table th, table td { border: 1px solid #999 !important; background: #FFF !important; color: #000 !important; }
+  thead { display: table-header-group; }
+  tr { break-inside: avoid; }
+
+  a { color: #000 !important; text-decoration: underline; }
+  /* Give printed links their destination, but only real ones. */
+  a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 9pt; color: #444; }
+}
+
+
+/* ==========================================================================
+   24. Reduced motion
+   A vestibular-disorder accommodation, and a WCAG 2.2 expectation. Everything
+   above degrades to an instant state change.
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .chu-reveal { opacity: 1 !important; transform: none !important; }
+}
+
+
+/* ==========================================================================
+   25. Forced colours (Windows high contrast)
+   ========================================================================== */
+
+@media (forced-colors: active) {
+  .chu-rail__item.is-active { border-inline-start-color: Highlight; }
+  .button, button, .btn, input, select, textarea { border: 1px solid ButtonBorder !important; }
+  .chu-status::before { forced-color-adjust: none; }
+}

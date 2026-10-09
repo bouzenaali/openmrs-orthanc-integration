@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+        "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+        "http://hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping package="org.openmrs.module.agentgateway.api.model">
+    <class name="AgentOperationLog" table="agentgateway_operation_log">
+        <id name="id" type="int" column="agent_operation_log_id">
+            <generator class="native"/>
+        </id>
+        <property name="uuid" type="string" column="uuid" length="38" unique="true" not-null="true"/>
+        <property name="conversationId" type="string" column="conversation_id" length="64"/>
+        <many-to-one name="actingUser" class="org.openmrs.User" column="acting_user" not-null="true"/>
+        <property name="rawPrompt" type="text" column="raw_prompt"/>
+        <property name="taskType" type="string" column="task_type" length="100"/>
+        <property name="targetEndpoint" type="string" column="target_endpoint" length="1000"/>
+        <property name="requestBody" type="text" column="request_body"/>
+        <property name="responseStatus" type="int" column="response_status"/>
+        <property name="responseBody" type="text" column="response_body"/>
+        <property name="previousState" type="text" column="previous_state"/>
+        <property name="resourceUuidAffected" type="string" column="resource_uuid_affected" length="38"/>
+        <property name="usingAgent" type="boolean" column="using_agent" not-null="true"/>
+        <property name="reversible" type="boolean" column="reversible" not-null="true"/>
+        <property name="reversibilityNote" type="string" column="reversibility_note" length="500"/>
+        <many-to-one name="rolledBackBy" class="org.openmrs.User" column="rolled_back_by"/>
+        <property name="dateRolledBack" type="timestamp" column="date_rolled_back"/>
+        <property name="reversesLogId" type="int" column="reverses_log_id"/>
+        <many-to-one name="creator" class="org.openmrs.User" column="creator" not-null="true"/>
+        <property name="dateCreated" type="timestamp" column="date_created" not-null="true"/>
+    </class>
+</hibernate-mapping>

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog/1.9"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog/1.9
+                  http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-1.9.xsd">
+
+    <!--
+        Changesets here are immutable once they have run anywhere. Never edit one after the
+        fact - Liquibase records its checksum permanently and an edit only produces a validation
+        error for whoever already ran it. Always append a new changeset instead.
+    -->
+
+    <changeSet id="agentgateway-2026-08-14-01" author="agentgateway">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="agentgateway_operation_log"/></not>
+        </preConditions>
+        <comment>Creating the agentgateway_operation_log audit table</comment>
+        <createTable tableName="agentgateway_operation_log">
+            <column name="agent_operation_log_id" type="int" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="uuid" type="char(38)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="conversation_id" type="varchar(64)"/>
+            <column name="acting_user" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="raw_prompt" type="text"/>
+            <column name="task_type" type="varchar(100)"/>
+            <column name="target_endpoint" type="varchar(1000)"/>
+            <column name="request_body" type="text"/>
+            <column name="response_status" type="int"/>
+            <column name="response_body" type="text"/>
+            <column name="previous_state" type="text"/>
+            <column name="resource_uuid_affected" type="varchar(38)"/>
+            <column name="using_agent" type="boolean" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="reversible" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="reversibility_note" type="varchar(500)"/>
+            <column name="rolled_back_by" type="int"/>
+            <column name="date_rolled_back" type="datetime"/>
+            <column name="reverses_log_id" type="int"/>
+            <column name="creator" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="date_created" type="datetime">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint constraintName="agentgateway_log_acting_user_fk"
+            baseTableName="agentgateway_operation_log" baseColumnNames="acting_user"
+            referencedTableName="users" referencedColumnNames="user_id"/>
+        <addForeignKeyConstraint constraintName="agentgateway_log_creator_fk"
+            baseTableName="agentgateway_operation_log" baseColumnNames="creator"
+            referencedTableName="users" referencedColumnNames="user_id"/>
+        <addForeignKeyConstraint constraintName="agentgateway_log_rolled_back_by_fk"
+            baseTableName="agentgateway_operation_log" baseColumnNames="rolled_back_by"
+            referencedTableName="users" referencedColumnNames="user_id"/>
+        <createIndex indexName="agentgateway_log_conversation_idx"
+            tableName="agentgateway_operation_log">
+            <column name="conversation_id"/>
+        </createIndex>
+        <createIndex indexName="agentgateway_log_resource_idx"
+            tableName="agentgateway_operation_log">
+            <column name="resource_uuid_affected"/>
+        </createIndex>
+        <createIndex indexName="agentgateway_log_date_created_idx"
+            tableName="agentgateway_operation_log">
+            <column name="date_created"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

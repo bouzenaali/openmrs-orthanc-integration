@@ -1,0 +1,375 @@
+{
+  "_comment": [
+    "Announces this module's clinical data to the medreport reporting module.",
+    "",
+    "This file is the ENTIRE integration. patientview gains no dependency on medreport:",
+    "no import, no interface, no library. medreport discovers this manifest on the classpath",
+    "of every started module, reads what data exists, and calls the named PatientviewService",
+    "methods reflectively. Those methods already return Map<String,Object> / List<Map<...>>,",
+    "so the contract between the two modules is JDK types plus this file - nothing more.",
+    "",
+    "Because the call goes through Context.getService(PatientviewService.class), this module's",
+    "own @Authorized advice still runs on every fetch. medreport cannot be used as a way",
+    "around patientview's access rules; requiredPrivilege below is an additional filter that",
+    "also hides the data from the report's selection tree, so a user who may not view it",
+    "cannot even ask for it.",
+    "",
+    "If medreport is not installed, nothing reads this file and nothing changes."
+  ],
+
+  "id": "patientview",
+  "moduleId": "patientview",
+  "sortWeight": 10,
+  "label": {
+    "fr": "Dossier neurochirurgical",
+    "en": "Neurosurgery record",
+    "ar": "ملف جراحة الأعصاب"
+  },
+  "requiredPrivilege": "App: patientview.neurosurgeryDashboard",
+
+  "sections": [
+    {
+      "id": "patientview.admission",
+      "sortWeight": 10,
+      "label": {
+        "fr": "Motif d'hospitalisation",
+        "en": "Reason for admission",
+        "ar": "سبب الاستشفاء"
+      },
+      "description": {
+        "fr": "Contexte d'admission, délai diagnostique et médecins référents (Fiche §2).",
+        "en": "Admission context, diagnostic delay and referring physicians (Fiche §2).",
+        "ar": "سياق الدخول ومدة التشخيص والأطباء المحوّلون."
+      },
+      "repeating": true,
+      "recordTitleKey": "dateCreated",
+      "recordLimit": 10,
+      "source": {
+        "serviceClass": "org.openmrs.module.patientview.api.PatientviewService",
+        "method": "getAdmissionContexts",
+        "args": ["patient"]
+      },
+      "fields": [
+        { "id": "admissionReason", "type": "longtext", "sortWeight": 0,
+          "label": { "fr": "Motif d'admission", "en": "Reason for admission", "ar": "سبب الدخول" } },
+        { "id": "symptomOnsetDate", "type": "date", "sortWeight": 1,
+          "label": { "fr": "Début des symptômes", "en": "Symptom onset", "ar": "بداية الأعراض" } },
+        { "id": "diagnosisDelayDays", "type": "number", "unit": "j", "sortWeight": 2,
+          "label": { "fr": "Délai diagnostique", "en": "Diagnostic delay", "ar": "مدة التشخيص" } },
+        { "id": "admissionDiagnosis", "type": "text", "sortWeight": 3,
+          "label": { "fr": "Diagnostic d'admission", "en": "Admission diagnosis", "ar": "تشخيص الدخول" } },
+        { "id": "primaryDiagnosis", "type": "text", "emphasis": true, "sortWeight": 4,
+          "label": { "fr": "Diagnostic principal", "en": "Primary diagnosis", "ar": "التشخيص الرئيسي" } },
+        { "id": "secondaryDiagnoses", "type": "longtext", "sortWeight": 5,
+          "label": { "fr": "Diagnostics secondaires", "en": "Secondary diagnoses", "ar": "التشخيصات الثانوية" } },
+        { "id": "profession", "type": "text", "sortWeight": 6,
+          "label": { "fr": "Profession", "en": "Occupation", "ar": "المهنة" } },
+        { "id": "referringPhysician", "type": "text", "sortWeight": 7,
+          "label": { "fr": "Médecin référent", "en": "Referring physician", "ar": "الطبيب المحوِّل" } },
+        { "id": "responsibleNeurosurgeon", "type": "text", "sortWeight": 8,
+          "label": { "fr": "Neurochirurgien responsable", "en": "Responsible neurosurgeon", "ar": "جراح الأعصاب المسؤول" } },
+        { "id": "dateCreated", "type": "date", "sortWeight": 9,
+          "label": { "fr": "Date d'enregistrement", "en": "Recorded on", "ar": "تاريخ التسجيل" } }
+      ]
+    },
+
+    {
+      "id": "patientview.medicalHistory",
+      "sortWeight": 20,
+      "label": {
+        "fr": "Antécédents médicaux",
+        "en": "Medical history",
+        "ar": "السوابق المرضية"
+      },
+      "description": {
+        "fr": "Version la plus récente des antécédents (Fiche §3). L'historique complet reste conservé côté patientview.",
+        "en": "Most recent recorded history (Fiche §3). The full history stays in patientview.",
+        "ar": "أحدث نسخة مسجلة من السوابق."
+      },
+      "repeating": false,
+      "source": {
+        "serviceClass": "org.openmrs.module.patientview.api.PatientviewService",
+        "method": "getMedicalHistory",
+        "args": ["patient"]
+      },
+      "fields": [
+        { "id": "diabetes", "type": "boolean", "sortWeight": 0,
+          "label": { "fr": "Diabète", "en": "Diabetes", "ar": "السكري" } },
+        { "id": "hypertension", "type": "boolean", "sortWeight": 1,
+          "label": { "fr": "Hypertension artérielle", "en": "Hypertension", "ar": "ارتفاع ضغط الدم" } },
+        { "id": "epilepsy", "type": "boolean", "sortWeight": 2,
+          "label": { "fr": "Épilepsie", "en": "Epilepsy", "ar": "الصرع" } },
+        { "id": "stroke", "type": "boolean", "sortWeight": 3,
+          "label": { "fr": "AVC", "en": "Stroke", "ar": "السكتة الدماغية" } },
+        { "id": "heartDisease", "type": "boolean", "sortWeight": 4,
+          "label": { "fr": "Cardiopathie", "en": "Heart disease", "ar": "أمراض القلب" } },
+        { "id": "renalFailure", "type": "boolean", "sortWeight": 5,
+          "label": { "fr": "Insuffisance rénale", "en": "Renal failure", "ar": "القصور الكلوي" } },
+        { "id": "allergies", "type": "longtext", "emphasis": true, "sortWeight": 6,
+          "label": { "fr": "Allergies", "en": "Allergies", "ar": "الحساسية" } },
+        { "id": "chronicTreatment", "type": "longtext", "sortWeight": 7,
+          "label": { "fr": "Traitement chronique", "en": "Chronic treatment", "ar": "العلاج المزمن" } },
+        { "id": "otherHistory", "type": "longtext", "sortWeight": 8,
+          "label": { "fr": "Autres antécédents", "en": "Other history", "ar": "سوابق أخرى" } }
+      ]
+    },
+
+    {
+      "id": "patientview.surgicalHistory",
+      "sortWeight": 30,
+      "label": {
+        "fr": "Antécédents chirurgicaux",
+        "en": "Surgical history",
+        "ar": "السوابق الجراحية"
+      },
+      "repeating": true,
+      "recordTitleKey": "date",
+      "source": {
+        "serviceClass": "org.openmrs.module.patientview.api.PatientviewService",
+        "method": "getSurgicalHistory",
+        "args": ["patient"]
+      },
+      "fields": [
+        { "id": "procedure", "type": "text", "emphasis": true, "sortWeight": 0,
+          "label": { "fr": "Intervention", "en": "Procedure", "ar": "العملية" } },
+        { "id": "date", "type": "date", "sortWeight": 1,
+          "label": { "fr": "Date", "en": "Date", "ar": "التاريخ" } },
+        { "id": "surgeon", "type": "text", "sortWeight": 2,
+          "label": { "fr": "Chirurgien", "en": "Surgeon", "ar": "الجراح" } },
+        { "id": "location", "type": "text", "sortWeight": 3,
+          "label": { "fr": "Lieu", "en": "Location", "ar": "المكان" } },
+        { "id": "outcome", "type": "text", "sortWeight": 4,
+          "label": { "fr": "Suites", "en": "Outcome", "ar": "النتيجة" } },
+        { "id": "notes", "type": "longtext", "sortWeight": 5,
+          "label": { "fr": "Notes", "en": "Notes", "ar": "ملاحظات" } }
+      ]
+    },
+
+    {
+      "id": "patientview.vitals",
+      "sortWeight": 40,
+      "label": {
+        "fr": "Examen clinique général",
+        "en": "General clinical examination",
+        "ar": "الفحص السريري العام"
+      },
+      "description": {
+        "fr": "Constantes vitales, du plus récent au plus ancien (Fiche §4).",
+        "en": "Vital signs, most recent first (Fiche §4).",
+        "ar": "العلامات الحيوية، من الأحدث إلى الأقدم."
+      },
+      "repeating": true,
+      "recordTitleKey": "examDate",
+      "recordLimit": 5,
+      "source": {
+        "serviceClass": "org.openmrs.module.patientview.api.PatientviewService",
+        "method": "getVitalSigns",
+        "args": ["patient", "limit:5"]
+      },
+      "fields": [
+        { "id": "examDate", "type": "date", "sortWeight": 0,
+          "label": { "fr": "Date de l'examen", "en": "Examination date", "ar": "تاريخ الفحص" } },
+        { "id": "temperature", "type": "number", "unit": "°C", "sortWeight": 1,
+          "label": { "fr": "Température", "en": "Temperature", "ar": "الحرارة" } },
+        { "id": "bpSystolic", "type": "number", "unit": "mmHg", "sortWeight": 2,
+          "label": { "fr": "TA systolique", "en": "Systolic BP", "ar": "الضغط الانقباضي" } },
+        { "id": "bpDiastolic", "type": "number", "unit": "mmHg", "sortWeight": 3,
+          "label": { "fr": "TA diastolique", "en": "Diastolic BP", "ar": "الضغط الانبساطي" } },
+        { "id": "heartRate", "type": "number", "unit": "bpm", "sortWeight": 4,
+          "label": { "fr": "Fréquence cardiaque", "en": "Heart rate", "ar": "نبض القلب" } },
+        { "id": "respiratoryRate", "type": "number", "unit": "/min", "sortWeight": 5,
+          "label": { "fr": "Fréquence respiratoire", "en": "Respiratory rate", "ar": "معدل التنفس" } },
+        { "id": "spo2", "type": "number", "unit": "%", "sortWeight": 6,
+          "label": { "fr": "SpO2", "en": "SpO2", "ar": "تشبع الأكسجين" } },
+        { "id": "weightKg", "type": "number", "unit": "kg", "sortWeight": 7,
+          "label": { "fr": "Poids", "en": "Weight", "ar": "الوزن" } },
+        { "id": "heightCm", "type": "number", "unit": "cm", "sortWeight": 8,
+          "label": { "fr": "Taille", "en": "Height", "ar": "الطول" } },
+        { "id": "bmi", "type": "number", "sortWeight": 9,
+          "label": { "fr": "IMC", "en": "BMI", "ar": "مؤشر كتلة الجسم" } }
+      ]
+    },
+
+    {
+      "id": "patientview.neuroExam",
+      "sortWeight": 50,
+      "label": {
+        "fr": "Examen neurologique",
+        "en": "Neurological examination",
+        "ar": "الفحص العصبي"
+      },
+      "description": {
+        "fr": "Examen neurologique détaillé (Fiche §5).",
+        "en": "Detailed neurological examination (Fiche §5).",
+        "ar": "فحص عصبي مفصل."
+      },
+      "repeating": true,
+      "recordTitleKey": "examDate",
+      "recordLimit": 3,
+      "source": {
+        "serviceClass": "org.openmrs.module.patientview.api.PatientviewService",
+        "method": "getNeuroExamDetails",
+        "args": ["patient", "limit:3"]
+      },
+      "fields": [
+        { "id": "examDate", "type": "date", "sortWeight": 0,
+          "label": { "fr": "Date de l'examen", "en": "Examination date", "ar": "تاريخ الفحص" } },
+        { "id": "orientation", "type": "text", "sortWeight": 1,
+          "label": { "fr": "Orientation", "en": "Orientation", "ar": "التوجه" } },
+        { "id": "language", "type": "text", "sortWeight": 2,
+          "label": { "fr": "Langage", "en": "Language", "ar": "اللغة" } },
+        { "id": "memory", "type": "text", "sortWeight": 3,
+          "label": { "fr": "Mémoire", "en": "Memory", "ar": "الذاكرة" } },
+        { "id": "cranialNerves", "type": "longtext", "sortWeight": 4,
+          "label": { "fr": "Nerfs crâniens", "en": "Cranial nerves", "ar": "الأعصاب القحفية" } },
+        { "id": "motorDeficit", "type": "text", "emphasis": true, "sortWeight": 5,
+          "label": { "fr": "Déficit moteur", "en": "Motor deficit", "ar": "العجز الحركي" } },
+        { "id": "sensoryDeficit", "type": "text", "sortWeight": 6,
+          "label": { "fr": "Déficit sensitif", "en": "Sensory deficit", "ar": "العجز الحسي" } },
+        { "id": "reflexes", "type": "text", "sortWeight": 7,
+          "label": { "fr": "Réflexes", "en": "Reflexes", "ar": "المنعكسات" } },
+        { "id": "plantarReflex", "type": "text", "sortWeight": 8,
+          "label": { "fr": "Réflexe cutané plantaire", "en": "Plantar reflex", "ar": "المنعكس الأخمصي" } },
+        { "id": "coordination", "type": "text", "sortWeight": 9,
+          "label": { "fr": "Coordination", "en": "Coordination", "ar": "التناسق" } },
+        { "id": "gait", "type": "text", "sortWeight": 10,
+          "label": { "fr": "Marche", "en": "Gait", "ar": "المشية" } },
+        { "id": "balance", "type": "text", "sortWeight": 11,
+          "label": { "fr": "Équilibre", "en": "Balance", "ar": "التوازن" } },
+        { "id": "cerebellarSigns", "type": "boolean", "sortWeight": 12,
+          "label": { "fr": "Signes cérébelleux", "en": "Cerebellar signs", "ar": "علامات مخيخية" } },
+        { "id": "pyramidalSyndrome", "type": "boolean", "sortWeight": 13,
+          "label": { "fr": "Syndrome pyramidal", "en": "Pyramidal syndrome", "ar": "متلازمة هرمية" } },
+        { "id": "meningealSyndrome", "type": "boolean", "sortWeight": 14,
+          "label": { "fr": "Syndrome méningé", "en": "Meningeal syndrome", "ar": "متلازمة سحائية" } },
+        { "id": "seizures", "type": "boolean", "sortWeight": 15,
+          "label": { "fr": "Crises convulsives", "en": "Seizures", "ar": "النوبات التشنجية" } },
+        { "id": "headache", "type": "boolean", "sortWeight": 16,
+          "label": { "fr": "Céphalées", "en": "Headache", "ar": "الصداع" } },
+        { "id": "vomiting", "type": "boolean", "sortWeight": 17,
+          "label": { "fr": "Vomissements", "en": "Vomiting", "ar": "التقيؤ" } },
+        { "id": "visualDisturbances", "type": "boolean", "sortWeight": 18,
+          "label": { "fr": "Troubles visuels", "en": "Visual disturbances", "ar": "اضطرابات بصرية" } },
+        { "id": "sphincterDisturbances", "type": "boolean", "sortWeight": 19,
+          "label": { "fr": "Troubles sphinctériens", "en": "Sphincter disturbances", "ar": "اضطرابات المصرات" } },
+        { "id": "notes", "type": "longtext", "sortWeight": 20,
+          "label": { "fr": "Notes", "en": "Notes", "ar": "ملاحظات" } }
+      ]
+    },
+
+    {
+      "id": "patientview.neuroAssessment",
+      "sortWeight": 60,
+      "label": {
+        "fr": "Scores neurologiques",
+        "en": "Neurological scores",
+        "ar": "الدرجات العصبية"
+      },
+      "description": {
+        "fr": "Glasgow et Karnofsky, du plus récent au plus ancien.",
+        "en": "Glasgow and Karnofsky, most recent first.",
+        "ar": "غلاسكو وكارنوفسكي، من الأحدث إلى الأقدم."
+      },
+      "repeating": true,
+      "recordTitleKey": "date",
+      "recordLimit": 5,
+      "source": {
+        "serviceClass": "org.openmrs.module.patientview.api.PatientviewService",
+        "method": "getRecentNeuroAssessments",
+        "args": ["patient", "limit:5"]
+      },
+      "fields": [
+        { "id": "date", "type": "date", "sortWeight": 0,
+          "label": { "fr": "Date", "en": "Date", "ar": "التاريخ" } },
+        { "id": "gcs", "type": "number", "emphasis": true, "sortWeight": 1,
+          "label": { "fr": "Score de Glasgow", "en": "Glasgow Coma Scale", "ar": "مقياس غلاسكو" } },
+        { "id": "eyeResponse", "type": "number", "sortWeight": 2,
+          "label": { "fr": "Ouverture des yeux", "en": "Eye response", "ar": "استجابة العين" } },
+        { "id": "verbalResponse", "type": "number", "sortWeight": 3,
+          "label": { "fr": "Réponse verbale", "en": "Verbal response", "ar": "الاستجابة اللفظية" } },
+        { "id": "motorResponse", "type": "number", "sortWeight": 4,
+          "label": { "fr": "Réponse motrice", "en": "Motor response", "ar": "الاستجابة الحركية" } },
+        { "id": "karnofskyScore", "type": "number", "unit": "%", "sortWeight": 5,
+          "label": { "fr": "Indice de Karnofsky", "en": "Karnofsky score", "ar": "مؤشر كارنوفسكي" } },
+        { "id": "notes", "type": "longtext", "sortWeight": 6,
+          "label": { "fr": "Notes", "en": "Notes", "ar": "ملاحظات" } }
+      ]
+    },
+
+    {
+      "id": "patientview.diagnosis",
+      "sortWeight": 70,
+      "label": {
+        "fr": "Diagnostic neurochirurgical",
+        "en": "Neurosurgical diagnosis",
+        "ar": "التشخيص الجراحي العصبي"
+      },
+      "description": {
+        "fr": "Diagnostic, siège lésionnel, latéralité et taille (Fiche §8).",
+        "en": "Diagnosis, lesion site, laterality and size (Fiche §8).",
+        "ar": "التشخيص وموقع الآفة والجانب والحجم."
+      },
+      "repeating": true,
+      "recordTitleKey": "dateCreated",
+      "recordLimit": 5,
+      "source": {
+        "serviceClass": "org.openmrs.module.patientview.api.PatientviewService",
+        "method": "getNeurosurgicalDiagnoses",
+        "args": ["patient"]
+      },
+      "fields": [
+        { "id": "diagnosis", "type": "text", "emphasis": true, "sortWeight": 0,
+          "label": { "fr": "Diagnostic", "en": "Diagnosis", "ar": "التشخيص" } },
+        { "id": "lesionLocation", "type": "text", "sortWeight": 1,
+          "label": { "fr": "Siège de la lésion", "en": "Lesion location", "ar": "موقع الآفة" } },
+        { "id": "laterality", "type": "text", "sortWeight": 2,
+          "label": { "fr": "Latéralité", "en": "Laterality", "ar": "الجانب" } },
+        { "id": "size", "type": "text", "sortWeight": 3,
+          "label": { "fr": "Taille", "en": "Size", "ar": "الحجم" } },
+        { "id": "lesionCount", "type": "number", "sortWeight": 4,
+          "label": { "fr": "Nombre de lésions", "en": "Number of lesions", "ar": "عدد الآفات" } },
+        { "id": "whoDiagnosis", "type": "text", "sortWeight": 5,
+          "label": { "fr": "Classification OMS", "en": "WHO classification", "ar": "تصنيف منظمة الصحة العالمية" } },
+        { "id": "dateCreated", "type": "date", "sortWeight": 6,
+          "label": { "fr": "Date d'enregistrement", "en": "Recorded on", "ar": "تاريخ التسجيل" } }
+      ]
+    },
+
+    {
+      "id": "patientview.pathology",
+      "sortWeight": 80,
+      "label": {
+        "fr": "Anatomopathologie",
+        "en": "Anatomical pathology",
+        "ar": "التشريح المرضي"
+      },
+      "description": {
+        "fr": "Compte rendu anatomopathologique et marqueurs (Fiche §10).",
+        "en": "Pathology report and markers (Fiche §10).",
+        "ar": "تقرير التشريح المرضي والواسمات."
+      },
+      "repeating": true,
+      "recordTitleKey": "dateCreated",
+      "recordLimit": 5,
+      "source": {
+        "serviceClass": "org.openmrs.module.patientview.api.PatientviewService",
+        "method": "getPathologyReports",
+        "args": ["patient"]
+      },
+      "fields": [
+        { "id": "finalDiagnosis", "type": "text", "emphasis": true, "sortWeight": 0,
+          "label": { "fr": "Diagnostic final", "en": "Final diagnosis", "ar": "التشخيص النهائي" } },
+        { "id": "whoGrade", "type": "text", "sortWeight": 1,
+          "label": { "fr": "Grade OMS", "en": "WHO grade", "ar": "درجة منظمة الصحة العالمية" } },
+        { "id": "studyFindings", "type": "longtext", "sortWeight": 2,
+          "label": { "fr": "Résultats de l'étude", "en": "Study findings", "ar": "نتائج الدراسة" } },
+        { "id": "immunohistochemistry", "type": "longtext", "sortWeight": 3,
+          "label": { "fr": "Immunohistochimie", "en": "Immunohistochemistry", "ar": "الكيمياء المناعية النسيجية" } },
+        { "id": "molecularMarkers", "type": "longtext", "sortWeight": 4,
+          "label": { "fr": "Marqueurs moléculaires", "en": "Molecular markers", "ar": "الواسمات الجزيئية" } },
+        { "id": "dateCreated", "type": "date", "sortWeight": 5,
+          "label": { "fr": "Date d'enregistrement", "en": "Recorded on", "ar": "تاريخ التسجيل" } }
+      ]
+    }
+  ]
+}

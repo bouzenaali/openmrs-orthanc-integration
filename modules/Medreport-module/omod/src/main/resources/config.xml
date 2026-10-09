@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module configVersion="1.2">
+
+    <id>medreport</id>
+    <name>Medical Report</name>
+    <version>1.0.0</version>
+    <package>org.openmrs.module.medreport</package>
+    <author>CERIST / CHU Blida neurosurgery integration</author>
+    <description>
+        Medical report generation. Owns per-image observation reports over Orthanc DICOM
+        studies (versioned, audited, soft-deleted) and personalised full patient reports
+        assembled from any module that announces clinical data.
+    </description>
+
+    <activator>org.openmrs.module.medreport.MedreportActivator</activator>
+
+    <require_version>2.4.3</require_version>
+
+    <require_modules>
+        <require_module version="2.16.0">org.openmrs.module.uiframework</require_module>
+        <require_module version="2.24.0">org.openmrs.module.webservices.rest</require_module>
+        <require_module version="1.16.0">org.openmrs.module.coreapps</require_module>
+        <require_module version="1.10.0">org.openmrs.module.appui</require_module>
+    </require_modules>
+
+    <!--
+      Deliberately "aware of", not "requires". medreport reads data from contributing
+      modules through a manifest and reflection, never through their Java types, so it must
+      start and work whether or not any given contributor is installed. Declaring a hard
+      dependency on patientview or imaging would also invert the intended direction:
+      reporting depends on nothing clinical, and nothing clinical depends on reporting.
+    -->
+    <aware_of_modules>
+        <aware_of_module>org.openmrs.module.patientview</aware_of_module>
+        <aware_of_module>org.openmrs.module.imaging</aware_of_module>
+        <aware_of_module>org.openmrs.module.legacyui</aware_of_module>
+    </aware_of_modules>
+
+    <mappingFiles>
+        org/openmrs/module/medreport/api/model/ImageReport.hbm.xml
+        org/openmrs/module/medreport/api/model/ImageReportVersion.hbm.xml
+        org/openmrs/module/medreport/api/model/ReportImageLink.hbm.xml
+        org/openmrs/module/medreport/api/model/MedreportOperationLog.hbm.xml
+        org/openmrs/module/medreport/api/model/UserReportPreference.hbm.xml
+    </mappingFiles>
+
+    <!-- ============================ Privileges ============================
+      "App:"-prefixed because the Reference Application auto-grants every plain privilege to
+      every role, which makes a plain privilege a boundary in name only. See
+      MedreportPrivileges for the full reasoning, including why these do not overlap with
+      Rapport_3's core "Add/Edit reports" privileges.
+    -->
+    <privilege>
+        <name>App: medreport.imaging.view</name>
+        <description>
+            Read imaging observation reports - one's own and other authors' - and download
+            their documents. Assign to surgeons, OR nurses and radiologists/technicians.
+        </description>
+    </privilege>
+    <privilege>
+        <name>App: medreport.imaging.manage</name>
+        <description>
+            Write imaging observation reports, and edit or remove one's OWN reports. Never
+            grants access to another author's report. Assign to surgeons and
+            radiologists/technicians, together with the view privilege.
+        </description>
+    </privilege>
+    <privilege>
+        <name>App: medreport.admin</name>
+        <description>
+            Browse a report's full version history and restore a removed report. Everyone
+            else, the report's own author included, sees only the current version. Assign to
+            system administrators / the department head only.
+        </description>
+    </privilege>
+    <privilege>
+        <name>App: medreport.dashboardGenerate</name>
+        <description>
+            Generate a personalised full patient report from the patient dashboard. What the
+            report may contain is further limited by the privileges the user holds over each
+            individual set of clinical data.
+        </description>
+    </privilege>
+
+    <!-- API-level companions, for OpenMRS distributions that do not auto-grant plain
+         privileges. Not the effective boundary on a Reference Application install. -->
+    <privilege>
+        <name>View Medical Reports</name>
+        <description>API-level: read medical reports</description>
+    </privilege>
+    <privilege>
+        <name>Manage Medical Reports</name>
+        <description>API-level: create and update medical reports</description>
+    </privilege>
+
+    <!-- ======================= Global properties ======================= -->
+    <globalProperty>
+        <property>medreport.renderService.baseUrl</property>
+        <defaultValue>http://medreport-rgs:8300</defaultValue>
+        <description>
+            Base URL of the Report Generation Service. Must be reachable from the OpenMRS
+            container on the private network; it should NOT be published on the hospital LAN.
+        </description>
+    </globalProperty>
+    <globalProperty>
+        <property>medreport.renderService.token</property>
+        <defaultValue></defaultValue>
+        <description>
+            Shared token presented to the Report Generation Service. Must equal that
+            service's MEDREPORT_RGS_TOKEN. Empty means report rendering is disabled and every
+            attempt fails with a configuration message rather than silently.
+        </description>
+    </globalProperty>
+    <globalProperty>
+        <property>medreport.renderService.timeoutSeconds</property>
+        <defaultValue>90</defaultValue>
+        <description>How long to wait for a render before giving up (minimum 5).</description>
+    </globalProperty>
+    <globalProperty>
+        <property>medreport.defaultLanguage</property>
+        <defaultValue>fr</defaultValue>
+        <description>Default report language: fr, en or ar.</description>
+    </globalProperty>
+    <globalProperty>
+        <property>medreport.defaultTemplate</property>
+        <defaultValue>chu_blida_neuro</defaultValue>
+        <description>Template profile pre-selected in the personalisation window.</description>
+    </globalProperty>
+    <globalProperty>
+        <property>medreport.imaging.template</property>
+        <defaultValue>chu_blida_imaging</defaultValue>
+        <description>Template profile used for per-image observation reports.</description>
+    </globalProperty>
+    <globalProperty>
+        <property>medreport.facilityName</property>
+        <defaultValue>CHU de Blida</defaultValue>
+        <description>Facility name printed in report headers.</description>
+    </globalProperty>
+    <globalProperty>
+        <property>medreport.departmentName</property>
+        <defaultValue>Service de Neurochirurgie</defaultValue>
+        <description>Department name printed in report headers.</description>
+    </globalProperty>
+    <globalProperty>
+        <property>medreport.imaging.conceptUuid</property>
+        <defaultValue>1a5d3f60-8b21-4f2e-9c77-6c1f0f2a4b10</defaultValue>
+        <description>
+            Complex-datatype concept the rendered report document is stored against. Created
+            automatically on first start.
+        </description>
+    </globalProperty>
+    <globalProperty>
+        <property>medreport.imaging.encounterTypeUuid</property>
+        <defaultValue>2b6e4c71-9d32-4a13-8e88-7d2a1e3b5c21</defaultValue>
+        <description>
+            Encounter type imaging reports are filed under. Created automatically on first
+            start; reports still work without it, filed against the patient only.
+        </description>
+    </globalProperty>
+
+    <messages>
+        <lang>en</lang>
+        <file>messages.properties</file>
+    </messages>
+    <messages>
+        <lang>fr</lang>
+        <file>messages_fr.properties</file>
+    </messages>
+    <messages>
+        <lang>ar</lang>
+        <file>messages_ar.properties</file>
+    </messages>
+
+</module>

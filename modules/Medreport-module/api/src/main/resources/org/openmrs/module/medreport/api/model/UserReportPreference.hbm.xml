@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+        "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+        "http://hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping package="org.openmrs.module.medreport.api.model">
+    <class name="UserReportPreference" table="medreport_user_preference">
+        <id name="id" type="int" column="preference_id">
+            <generator class="native"/>
+        </id>
+        <property name="uuid" type="string" column="uuid" length="38" unique="true" not-null="true"/>
+        <many-to-one name="user" class="org.openmrs.User" column="user_id" not-null="true"/>
+        <property name="preferenceKey" type="string" column="preference_key" length="100" not-null="true"/>
+        <property name="preferenceValue" type="text" column="preference_value"/>
+        <property name="dateCreated" type="timestamp" column="date_created" not-null="true"/>
+        <property name="dateChanged" type="timestamp" column="date_changed"/>
+    </class>
+</hibernate-mapping>

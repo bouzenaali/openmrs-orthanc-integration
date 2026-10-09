@@ -1,3 +1,26 @@
 data
 insert.py
+
+# secrets — never commit live credentials
 .env
+
+# nested repos with their own git history and remote — managed separately,
+# not as submodules of this repo (see HANDOFF-2026-08-30.md and CLAUDE.md)
+/custom-imaging-openmrs/
+/neuro-patientview/
+/modules/openmrs-module-spa/
+
+# Maven build output
+**/target/
+
+# personal, machine-local Claude overrides — never shared
+CLAUDE.local.md
+.claude/settings.local.json
+
+# Backups of credential-bearing files. NOT in 'backup files/', which is tracked —
+# that convention is what published the Orthanc credential nine times over.
+*.secret-bak-*
+
+# Holds the injected PACS credential. Tracked until 2026-09-24, which published
+# it to a public remote. The sanitised shape lives in the .example file.
+orthanc-cors-proxy.conf

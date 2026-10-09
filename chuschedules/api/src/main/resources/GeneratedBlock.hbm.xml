@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+    "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping package="org.openmrs.module.chuschedules">
+
+    <class name="GeneratedBlock" table="chu_generated_block">
+        <id name="generatedId" type="java.lang.Integer" column="generated_id">
+            <generator class="native"/>
+        </id>
+        <many-to-one name="template" class="ScheduleTemplate" column="template_id" not-null="true"/>
+        <many-to-one name="range" class="ScheduleTemplateRange" column="range_id" not-null="true"/>
+        <property name="targetDate" type="date" column="target_date" not-null="true"/>
+        <!-- no foreign key: the appointment block belongs to another module -->
+        <property name="blockUuid" type="java.lang.String" column="block_uuid" length="38" not-null="true"/>
+
+        <property name="dateCreated" type="java.util.Date" column="date_created" not-null="true"/>
+        <property name="dateChanged" type="java.util.Date" column="date_changed"/>
+        <property name="voided" type="java.lang.Boolean" column="voided" not-null="true"/>
+        <property name="dateVoided" type="java.util.Date" column="date_voided"/>
+        <property name="voidReason" type="java.lang.String" column="void_reason" length="255"/>
+        <property name="uuid" type="java.lang.String" column="uuid" length="38" unique="true" not-null="true"/>
+
+        <many-to-one name="creator" class="org.openmrs.User" column="creator" not-null="true"/>
+        <many-to-one name="changedBy" class="org.openmrs.User" column="changed_by"/>
+        <many-to-one name="voidedBy" class="org.openmrs.User" column="voided_by"/>
+    </class>
+
+</hibernate-mapping>

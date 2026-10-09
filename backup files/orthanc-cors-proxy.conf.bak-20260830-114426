@@ -1,0 +1,24 @@
+server {
+    listen 80;
+
+    location / {
+        # Answer the browser's CORS preflight directly - Orthanc has no
+        # handler for a bare OPTIONS request, so this must not be proxied through.
+        if ($request_method = OPTIONS) {
+            add_header 'Access-Control-Allow-Origin' 'http://localhost:3000' always;
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
+            add_header 'Access-Control-Allow-Headers' 'Authorization, Content-Type, Accept' always;
+            add_header 'Access-Control-Max-Age' 3600;
+            return 204;
+        }
+
+        add_header 'Access-Control-Allow-Origin' 'http://localhost:3000' always;
+        # Diagnostic: inject the credential here instead of relying on the
+        # browser to send it. base64 of orthanc:orthanc_admin_password -
+        # matches ORTHANC__REGISTERED_USERS in orthanc-docker-compose.yml.
+        proxy_set_header Authorization "Basic b3J0aGFuYzpvcnRoYW5jX2FkbWluX3Bhc3N3b3Jk";
+        proxy_pass http://orthanc:8042;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}

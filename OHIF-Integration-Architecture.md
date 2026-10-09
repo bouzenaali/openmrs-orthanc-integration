@@ -329,11 +329,13 @@ networking.
 | Issue | Detail |
 | --- | --- |
 | **No GPU on this server** | Matrox G200eW3, no DRI render node, OpenGL via `llvmpipe` (software). OHIF v3.9 needs **WebGL2** (not WebGPU). Recent Chrome removed automatic software-WebGL fallback, so images may not render *on the server*. Launch with `--enable-unsafe-swiftshader`, or use a workstation with a GPU. Prefer `/viewer` (stack) over `/segmentation` (volume). |
-| **Segmentation saving** | `orthanc-cors-proxy` is stock `nginx:alpine` with a **1 MB** `client_max_body_size`. OHIF writes segmentations back via STOW-RS POST, which exceeds this. Add `client_max_body_size 0;` to `orthanc-cors-proxy.conf` before relying on saving. Read paths are unaffected. |
+| **Segmentation saving** | **Resolved 2026-09-01.** `orthanc-cors-proxy` is stock `nginx:alpine`, whose 1 MB `client_max_body_size` rejected OHIF's STOW-RS writes; `client_max_body_size 0;` is now set at the server level. Verified: a 20 MB POST traverses the full chain. NPM was never a second ceiling — it sets `2000m` in its own `nginx.conf`. Saving from a client is still to be confirmed in use. |
 | **CA trust** | Untrusted CA produces a browser warning. Same-origin means accepting once is sufficient, but install the CA properly for clinical use. |
 | **`/wado` returns 404** | WADO-URI is not enabled in Orthanc. Harmless — `wadors` rendering never calls it. |
 | **Network-level access control** | See §4: reaching the host grants authenticated Orthanc access. |
 | **NPM network attachment is not declarative** | `nginx-proxy-manager/docker-compose.yml` has **no `networks:` section**, yet NPM must sit on `openmrs-orthanc-integration_default` to resolve `ohif-viewer` and `orthanc-cors-proxy`. The attachment was made manually. **Recreating the NPM container drops it, and every proxy host starts returning 502.** Re-attach with `docker network connect openmrs-orthanc-integration_default nginx-proxy-manager-app-1`, or add the network to its compose file as `external: true`. |
+| **Credentials publicly exposed on GitHub** | Repo is public; `origin/main`'s tip carries a committed `.env` and `orthanc-docker-compose.yml` confirmed (2026-09-07, SHA-256, values never printed) to match what's live. **Accepted risk for this development environment** — explicit decision, not an oversight. Full detail and the mandatory pre-production checklist: `HANDOFF-2026-08-30.md` §4.3. |
+| **DB connection pool (c3p0)** | `min_size=2` set 2026-09-07 to stop the pool shrinking to zero idle connections before its 50-min validation cycle runs (root-caused the Aug 30 `500`s). Effectiveness against a real multi-day idle period **not yet confirmed** — see `HANDOFF-2026-08-30.md` §4.1. |
 | **Orthanc deletions** | Orthanc's `/changes` log contains **no** deletion events (change rows are removed with the resource). Only a full "Get studies" reconciles removals — see the module README. |
 
 ---

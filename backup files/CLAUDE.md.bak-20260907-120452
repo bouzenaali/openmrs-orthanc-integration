@@ -1,0 +1,133 @@
+# CLAUDE.md
+
+Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
+
+**Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
+
+## 1. Think Before Coding
+
+**Don't assume. Don't hide confusion. Surface tradeoffs.**
+
+Before implementing:
+- State your assumptions explicitly. If uncertain, ask.
+- If multiple interpretations exist, present them - don't pick silently.
+- If a simpler approach exists, say so. Push back when warranted.
+- If something is unclear, stop. Name what's confusing. Ask.
+
+## 2. Simplicity First
+
+**Minimum code that solves the problem. Nothing speculative.**
+
+- No features beyond what was asked.
+- No abstractions for single-use code.
+- No "flexibility" or "configurability" that wasn't requested.
+- No error handling for impossible scenarios.
+- If you write 200 lines and it could be 50, rewrite it.
+
+Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+
+## 3. Surgical Changes
+
+**Touch only what you must. Clean up only your own mess.**
+
+When editing existing code:
+- Don't "improve" adjacent code, comments, or formatting.
+- Don't refactor things that aren't broken.
+- Match existing style, even if you'd do it differently.
+- If you notice unrelated dead code, mention it - don't delete it.
+
+When your changes create orphans:
+- Remove imports/variables/functions that YOUR changes made unused.
+- Don't remove pre-existing dead code unless asked.
+
+The test: Every changed line should trace directly to the user's request.
+
+## 4. Goal-Driven Execution
+
+**Define success criteria. Loop until verified.**
+
+Transform tasks into verifiable goals:
+- "Add validation" → "Write tests for invalid inputs, then make them pass"
+- "Fix the bug" → "Write a test that reproduces it, then make it pass"
+- "Refactor X" → "Ensure tests pass before and after"
+
+For multi-step tasks, state a brief plan:
+```
+1. [Step] → verify: [check]
+2. [Step] → verify: [check]
+3. [Step] → verify: [check]
+```
+
+Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+
+---
+
+**These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+
+---
+
+# Project-specific rules — openmrs-orthanc-integration
+
+This is a **live hospital system** (Neurosurgery, CHU Blida). The rules below are not
+style preferences; each one exists because ignoring it has caused, or would cause, a real
+failure. See `README.md` and `OHIF-Integration-Architecture.md` for the system itself.
+
+## Working protocol
+
+The maintainer is a domain expert, **not an infrastructure specialist**. For every command:
+
+- State **WHAT / WHY / WHERE / EXPECTED / FAILURE / IF-IT-FAILS**.
+- Classify it: **READ-ONLY / SAFE CHANGE / FILE CHANGE / DESTRUCTIVE / PRODUCTION-IMPACTING**.
+- **One change at a time.** Propose, wait for approval, apply, verify. Never batch.
+- **Read-only investigation before any write.** Always.
+- **Never claim something works without demonstrating it.**
+- Say **WHERE** a command runs — host vs. which container. That distinction is the single
+  most common source of confusion here (a container name is not a hostname your browser
+  knows; `orthanc-cors-proxy` resolves only inside Docker).
+
+## Git — reads only
+
+**Do not run** `git add`, `git commit`, `git checkout`, `git restore`, `git reset`,
+`git clean`, or **any** `git submodule` command without explicit authorisation.
+
+1. `openmrs-module-imaging` **was a submodule**, removed and replaced by the plain
+   directory `custom-imaging-openmrs/`. A routine `git submodule update` could destroy
+   that directory or resurrect the old pointer.
+2. **The operational config is not in git.** `origin/main` holds only a README and the old
+   submodule pointer. `git checkout <file>` is **not** a rollback path.
+
+**Back up with timestamped copies instead**, into `backup files/`:
+
+```bash
+cp <file> "backup files/$(basename <file>).bak-$(date +%Y%m%d-%H%M%S)"
+```
+
+## Traps that have actually bitten
+
+| Trap | Rule |
+| --- | --- |
+| **Single-file bind mounts** (`ohif-app-config.js`, `orthanc-cors-proxy.conf`) bind the **inode**. `sed -i` and most editors replace it, leaving the container serving stale content. | Truncate in place: `cat new > file`. Verify with `docker exec <c> cat <path>`. |
+| **Internal vs published ports.** NPM connects over the Docker network. | Use the port *after* the arrow in `docker ps` — `ohif-viewer` is **80** not 3000, `orthanc-cors-proxy` is **80** not 8043. Wrong one gives 502. |
+| **Backups inside the module source tree get packaged.** `omod/src/main/webapp/` is copied wholesale into the `.omod`. | Keep backups in `module-backups/`, never under `custom-imaging-openmrs/`. |
+| **Three different Orthanc URLs**, easily confused. | `orthancBaseUrl` = `http://orthanc:8042` (server-side; changing it breaks uploads and syncing). `orthancProxyUrl` = `https://orthanc.hospital.lan` (browser links). `imaging.ohifBaseUrl` = `https://viewer.hospital.lan` (a **global property**, not on the Orthanc config page). |
+| **Global properties are cached in memory.** A direct SQL `UPDATE` leaves the app serving the old value. | Set them through the OpenMRS UI. |
+| **NPM's network attachment is not declarative.** Its compose file has no `networks:` section. | Recreating that container drops it and every proxy host 502s. Re-attach with `docker network connect openmrs-orthanc-integration_default nginx-proxy-manager-app-1`. |
+| **`ERROR - ImagingActivator.started(29) Started Imaging`** looks like a failure. | It is a **success** message with the wrong log level. Ignore it. |
+| **The server cannot resolve `*.hospital.lan`.** Its resolver is external; clients use the internal DNS. | Do **not** "fix" the server's DNS to make a test pass. Verify with `curl --resolve`, which overrides DNS for one request and changes nothing. A hosts entry exists for `viewer.hospital.lan` for local development only. |
+| **Cached browser credentials mask a broken auth chain.** | Test viewers in a **private/incognito** window. Seeing images after typing a password is a **failure**, not a pass — it means the auth-injection proxy was bypassed. |
+
+## Secrets
+
+- Reference the MySQL password as `-p"$MYSQL_ROOT_PASSWORD"` **inside**
+  `docker exec openmrs-mysql sh -c '...'` so it never enters host shell history. The
+  "Using a password on the command line" warning is expected and harmless.
+- `imaging_OrthancConfiguration` holds Orthanc credentials — `SELECT` only the columns you
+  need, never `SELECT *`.
+- Do not reproduce credentials in documentation, comments, or commit messages.
+
+## Evidence
+
+`~/nginx-proxy-manager/data/logs/proxy-host-<n>_access.log` records every request a browser
+actually made, with status codes. It is the authoritative evidence when a viewer
+misbehaves, and it distinguishes a networking fault from a client-side rendering one.
+Prefer it over inferring from what the browser appeared to do.

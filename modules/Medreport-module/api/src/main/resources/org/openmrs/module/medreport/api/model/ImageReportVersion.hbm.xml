@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+        "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+        "http://hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping package="org.openmrs.module.medreport.api.model">
+    <class name="ImageReportVersion" table="medreport_image_report_version">
+        <id name="id" type="int" column="version_id">
+            <generator class="native"/>
+        </id>
+        <property name="uuid" type="string" column="uuid" length="38" unique="true" not-null="true"/>
+        <many-to-one name="report" class="ImageReport" column="report_id" not-null="true"/>
+        <property name="versionNumber" type="int" column="version_number" not-null="true"/>
+        <property name="title" type="string" column="title" length="255"/>
+        <property name="observationText" type="text" column="observation_text"/>
+        <many-to-one name="documentObs" class="org.openmrs.Obs" column="obs_id"/>
+        <property name="documentFilename" type="string" column="document_filename" length="255"/>
+        <property name="changeType" type="string" column="change_type" length="20" not-null="true"/>
+        <property name="changeReason" type="string" column="change_reason" length="500"/>
+        <many-to-one name="createdBy" class="org.openmrs.User" column="created_by" not-null="true"/>
+        <property name="dateCreated" type="timestamp" column="date_created" not-null="true"/>
+        <many-to-one name="previousVersion" class="ImageReportVersion" column="previous_version_id"/>
+        <property name="current" type="boolean" column="is_current" not-null="true"/>
+
+        <bag name="images" inverse="true" lazy="false" cascade="all" order-by="sort_weight asc">
+            <key column="version_id"/>
+            <one-to-many class="ReportImageLink"/>
+        </bag>
+    </class>
+</hibernate-mapping>

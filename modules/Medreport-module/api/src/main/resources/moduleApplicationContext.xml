@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+         http://www.springframework.org/schema/beans
+         http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <!--
+      Three things are required for each service to work end to end in OpenMRS, and missing
+      any one produces a different failure mode (same pattern as patientview):
+        1. the DAO bean, wired to OpenMRS's shared sessionFactory;
+        2. a TransactionProxyFactoryBean so @Transactional semantics apply;
+        3. a <bean parent="serviceContext"> registration, without which the bean exists in
+           Spring but Context.getService(...) throws ServiceNotFoundException.
+    -->
+
+    <bean id="medreport.MedreportDao"
+          class="org.openmrs.module.medreport.api.dao.MedreportDaoImpl">
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+
+    <!-- Discovers contributing modules. Plain singleton: no transaction, no service
+         registration - it is infrastructure, not a clinical service. -->
+    <bean id="medreport.DataSourceRegistry"
+          class="org.openmrs.module.medreport.api.catalog.DataSourceRegistry"/>
+
+    <!-- medreport's own contribution (demographics), and the worked example of the typed
+         SPI. Discovered through Context.getRegisteredComponents(ClinicalDataContributor). -->
+    <bean id="medreport.CorePatientDataContributor"
+          class="org.openmrs.module.medreport.api.catalog.CorePatientDataContributor"/>
+
+    <bean id="medreport.ReportRenderClient"
+          class="org.openmrs.module.medreport.api.render.ReportRenderClient"/>
+
+    <!-- ================= audit ================= -->
+
+    <bean id="medreport.MedreportAuditServiceTarget"
+          class="org.openmrs.module.medreport.api.impl.MedreportAuditServiceImpl">
+        <property name="dao" ref="medreport.MedreportDao"/>
+    </bean>
+
+    <bean id="medreport.MedreportAuditService"
+          class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean"
+          primary="true">
+        <property name="transactionManager" ref="transactionManager"/>
+        <property name="target" ref="medreport.MedreportAuditServiceTarget"/>
+        <property name="transactionAttributes">
+            <props>
+                <!--
+                  REQUIRES_NEW, not REQUIRED. An audit entry has to survive a rollback of the
+                  business transaction: the cases most worth recording - a refused edit, a
+                  failed create - are exactly the ones where the outer transaction rolls
+                  back, and a shared transaction would erase the evidence with it (RP7).
+                -->
+                <prop key="log*">PROPAGATION_REQUIRES_NEW</prop>
+                <prop key="get*">PROPAGATION_REQUIRED,readOnly</prop>
+                <prop key="*">PROPAGATION_REQUIRED</prop>
+            </props>
+        </property>
+    </bean>
+
+    <bean parent="serviceContext">
+        <property name="moduleService">
+            <list>
+                <value>org.openmrs.module.medreport.api.MedreportAuditService</value>
+                <ref bean="medreport.MedreportAuditService"/>
+            </list>
+        </property>
+    </bean>
+
+    <!-- ================= imaging reports (use case 1) ================= -->
+
+    <bean id="medreport.ImageReportServiceTarget"
+          class="org.openmrs.module.medreport.api.impl.ImageReportServiceImpl">
+        <property name="dao" ref="medreport.MedreportDao"/>
+        <property name="auditService" ref="medreport.MedreportAuditService"/>
+        <property name="renderClient" ref="medreport.ReportRenderClient"/>
+    </bean>
+
+    <bean id="medreport.ImageReportService"
+          class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean"
+          primary="true">
+        <property name="transactionManager" ref="transactionManager"/>
+        <property name="target" ref="medreport.ImageReportServiceTarget"/>
+        <property name="transactionAttributes">
+            <props>
+                <prop key="*">PROPAGATION_REQUIRED</prop>
+            </props>
+        </property>
+    </bean>
+
+    <bean parent="serviceContext">
+        <property name="moduleService">
+            <list>
+                <value>org.openmrs.module.medreport.api.ImageReportService</value>
+                <ref bean="medreport.ImageReportService"/>
+            </list>
+        </property>
+    </bean>
+
+    <!-- ================= patient reports (use case 2) ================= -->
+
+    <bean id="medreport.PatientReportServiceTarget"
+          class="org.openmrs.module.medreport.api.impl.PatientReportServiceImpl">
+        <property name="dao" ref="medreport.MedreportDao"/>
+        <property name="registry" ref="medreport.DataSourceRegistry"/>
+        <property name="renderClient" ref="medreport.ReportRenderClient"/>
+        <property name="auditService" ref="medreport.MedreportAuditService"/>
+        <property name="imageReportService" ref="medreport.ImageReportService"/>
+    </bean>
+
+    <bean id="medreport.PatientReportService"
+          class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean"
+          primary="true">
+        <property name="transactionManager" ref="transactionManager"/>
+        <property name="target" ref="medreport.PatientReportServiceTarget"/>
+        <property name="transactionAttributes">
+            <props>
+                <prop key="*">PROPAGATION_REQUIRED</prop>
+            </props>
+        </property>
+    </bean>
+
+    <bean parent="serviceContext">
+        <property name="moduleService">
+            <list>
+                <value>org.openmrs.module.medreport.api.PatientReportService</value>
+                <ref bean="medreport.PatientReportService"/>
+            </list>
+        </property>
+    </bean>
+
+</beans>

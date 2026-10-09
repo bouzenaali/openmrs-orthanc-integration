@@ -1,0 +1,41 @@
+# openmrs-docker-compose.yml
+
+services:
+  openmrs-mysql:
+    image: mysql:8.0 # Use a recent, ARM64 compatible MySQL image for better performance and features
+    container_name: openmrs-mysql
+    restart: always
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --max_allowed_packet=16M
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DB:-openmrs}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-Admin123}
+      MYSQL_USER: ${MYSQL_USER:-openmrs}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-Admin123}
+    volumes:
+      - openmrs_mysql_data:/var/lib/mysql # Persistent volume for MySQL data
+    healthcheck: # Optional but recommended: Ensures MySQL is fully ready before OpenMRS attempts to connect
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u$$MYSQL_USER -p$$MYSQL_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  openmrs:
+    image: openmrs/openmrs-reference-application-distro:latest # Use latest stable ARM64 image
+    container_name: openmrs-app
+    restart: always
+    ports:
+      - "8080:8080" # Maps container port 8080 to host port 8080 for web access
+    environment:
+      DB_DATABASE: ${MYSQL_DB:-openmrs}
+      DB_HOST: openmrs-mysql # Use the service name for inter-container communication
+      DB_USERNAME: ${MYSQL_USER:-openmrs}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-Admin123}
+      DB_CREATE_TABLES: 'true' # Set to true for initial setup to create database schema
+      DB_AUTO_UPDATE: 'true'   # Set to true for initial setup to apply database migrations
+      MODULE_WEB_ADMIN: 'true' # Ensures the module administration UI is available
+    depends_on:
+      openmrs-mysql:
+        condition: service_healthy # Ensures OpenMRS starts only after MySQL is healthy
+
+volumes:
+  openmrs_mysql_data: # Define the named volume for MySQL data persistence

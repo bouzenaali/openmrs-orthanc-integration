@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+    "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping package="org.openmrs.module.chuschedules">
+
+    <class name="ScheduleTemplateRange" table="chu_schedule_template_range">
+        <id name="rangeId" type="java.lang.Integer" column="range_id">
+            <generator class="native"/>
+        </id>
+        <many-to-one name="template" class="ScheduleTemplate" column="template_id" not-null="true"/>
+
+        <property name="dayOfWeek" type="java.lang.Integer" column="day_of_week" not-null="true"/>
+        <property name="startTime" type="time" column="start_time" not-null="true"/>
+        <property name="endTime" type="time" column="end_time" not-null="true"/>
+
+        <property name="recurrenceType" column="recurrence_type" length="16" not-null="true">
+            <type name="org.hibernate.type.EnumType">
+                <param name="enumClass">org.openmrs.module.chuschedules.RecurrenceType</param>
+                <param name="useNamed">true</param>
+            </type>
+        </property>
+        <property name="weekInterval" type="java.lang.Integer" column="week_interval"/>
+        <property name="anchorDate" type="date" column="anchor_date"/>
+        <property name="monthOrdinal" type="java.lang.Integer" column="month_ordinal"/>
+
+        <property name="dateCreated" type="java.util.Date" column="date_created" not-null="true"/>
+        <property name="dateChanged" type="java.util.Date" column="date_changed"/>
+        <property name="voided" type="java.lang.Boolean" column="voided" not-null="true"/>
+        <property name="dateVoided" type="java.util.Date" column="date_voided"/>
+        <property name="voidReason" type="java.lang.String" column="void_reason" length="255"/>
+        <property name="uuid" type="java.lang.String" column="uuid" length="38" unique="true" not-null="true"/>
+
+        <many-to-one name="creator" class="org.openmrs.User" column="creator" not-null="true"/>
+        <many-to-one name="changedBy" class="org.openmrs.User" column="changed_by"/>
+        <many-to-one name="voidedBy" class="org.openmrs.User" column="voided_by"/>
+    </class>
+
+</hibernate-mapping>

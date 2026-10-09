@@ -20,7 +20,11 @@ services:
       retries: 5
 
   openmrs:
-    image: openmrs/openmrs-reference-application-distro:latest # Use latest stable ARM64 image
+    # Pinned to the digest of the image already running (was ":latest", which is mutable
+    # and can silently change on a future `docker compose pull`). Currently openmrs-api/
+    # openmrs-web 2.4.3. To move to a newer version deliberately, change this digest on
+    # purpose and follow the one-change-at-a-time / backup / verify protocol in CLAUDE.md.
+    image: openmrs/openmrs-reference-application-distro@sha256:60745fe5b8943ce7e53e62eb1833b7ad247c4e9e2d060405f3c346817a961a39
     container_name: openmrs-app
     restart: always
     ports:

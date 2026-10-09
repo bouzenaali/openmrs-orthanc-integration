@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module configVersion="1.2">
+
+    <id>agentgateway</id>
+    <name>Clinical Agent Gateway</name>
+    <version>1.2.0</version>
+    <package>org.openmrs.module.agentgateway</package>
+    <author>CERIST / CHU Blida neurosurgery project</author>
+    <description>
+        Security and audit gateway between OpenMRS and an external conversational agent service.
+        Relays chat turns, mints short-lived delegated tokens so every agent-originated call runs
+        under the requesting clinician's own privileges, logs every such call append-only, and
+        lets an administrator review and reverse one. Contains no clinical or department-specific
+        logic and could be reused by an unrelated department unchanged.
+    </description>
+
+    <activator>org.openmrs.module.agentgateway.AgentGatewayActivator</activator>
+
+    <require_version>2.4.3</require_version>
+
+    <require_modules>
+        <require_module version="2.16.0">
+            org.openmrs.module.uiframework
+        </require_module>
+        <require_module version="1.10.0">
+            org.openmrs.module.appui
+        </require_module>
+        <require_module version="1.16.0">
+            org.openmrs.module.coreapps
+        </require_module>
+    </require_modules>
+
+    <privilege>
+        <name>App: agentgateway.chat.use</name>
+        <description>Able to open the clinical assistant and have read-only lookups run on their behalf</description>
+    </privilege>
+    <privilege>
+        <name>App: agentgateway.chat.write</name>
+        <description>Able to have a confirmed create/update/booking executed on their behalf through the assistant. An extra gate on top of the user's own clinical privileges, never a replacement for them</description>
+    </privilege>
+    <privilege>
+        <name>App: agentgateway.voice.use</name>
+        <description>Able to dictate into the assistant's chat box instead of typing. Separate from chat.use so dictation can be switched off without withdrawing the assistant. Confers only speech-to-text into the compose box; the text is then an ordinary chat turn</description>
+    </privilege>
+    <privilege>
+        <name>App: agentgateway.rollback</name>
+        <description>Able to review the assistant's operation log and attempt to reverse an operation. Administrators only</description>
+    </privilege>
+
+    <globalProperty>
+        <property>agentgateway.agentServiceUrl</property>
+        <defaultValue>http://localhost:8000</defaultValue>
+        <description>Base URL of the Clinical Agent Service on Server 2. Server-to-server only; never reachable from a browser.</description>
+    </globalProperty>
+    <globalProperty>
+        <property>agentgateway.channelSecret</property>
+        <defaultValue></defaultValue>
+        <description>Shared secret proving a relayed chat turn genuinely came from this OpenMRS instance. Must match AGENT_CHANNEL_SECRET on the agent service. The chat refuses to start while this is empty.</description>
+    </globalProperty>
+    <globalProperty>
+        <property>agentgateway.agentTimeoutMillis</property>
+        <defaultValue>30000</defaultValue>
+        <description>Connect/read timeout for the relay call to the agent service, in milliseconds.</description>
+    </globalProperty>
+    <globalProperty>
+        <property>agentgateway.tokenTtlSeconds</property>
+        <defaultValue>300</defaultValue>
+        <description>Lifetime of a delegated token, in seconds. Keep it short: it is the window in which a leaked token could be replayed.</description>
+    </globalProperty>
+    <globalProperty>
+        <property>agentgateway.auditedPathPrefixes</property>
+        <defaultValue>/ws/rest/v1/,/ws/fhir2/R4/</defaultValue>
+        <description>Comma-separated URI prefixes an agent-originated call may target. Anything outside this list is refused even with a valid token. Add /module/patientview/ here to let the assistant reach the neurosurgery-specific endpoints.</description>
+    </globalProperty>
+    <globalProperty>
+        <property>agentgateway.selfBaseUrl</property>
+        <defaultValue>http://localhost:8080/openmrs</defaultValue>
+        <description>How this module reaches its own OpenMRS instance to read a record's before-state and to issue a reversing call. Should stay on the loopback interface.</description>
+    </globalProperty>
+    <globalProperty>
+        <property>agentgateway.captureBeforeState</property>
+        <defaultValue>true</defaultValue>
+        <description>Whether to read a record's current state back before the assistant overwrites it. Turning this off makes updates non-reversible, and the log says so.</description>
+    </globalProperty>
+    <globalProperty>
+        <property>agentgateway.maxLoggedBodyChars</property>
+        <defaultValue>20000</defaultValue>
+        <description>Maximum characters of any single request/response body kept in the audit log. Longer bodies are stored truncated with a marker.</description>
+    </globalProperty>
+    <globalProperty>
+        <property>agentgateway.sttServiceUrl</property>
+        <defaultValue>https://stt.hospital.lan</defaultValue>
+        <description>Base URL of the Clinical Dictation Service on Server 2. Server-to-server only; never reachable from a browser.</description>
+    </globalProperty>
+    <globalProperty>
+        <property>agentgateway.sttChannelSecret</property>
+        <defaultValue></defaultValue>
+        <description>Shared secret proving a relayed dictation genuinely came from this OpenMRS instance. Must match STT_CHANNEL_SECRET on the dictation service, and must be a DIFFERENT value from agentgateway.channelSecret - the dictation service refuses any request presenting the chat's secret, and the microphone button stays hidden while this is empty or identical to it.</description>
+    </globalProperty>
+    <globalProperty>
+        <property>agentgateway.sttTimeoutMillis</property>
+        <defaultValue>20000</defaultValue>
+        <description>Connect/read timeout for the relay call to the dictation service, in milliseconds. A 30-second utterance transcribes in well under a second, so this is a stuck-connection backstop.</description>
+    </globalProperty>
+    <globalProperty>
+        <property>agentgateway.signingPrivateKey</property>
+        <defaultValue></defaultValue>
+        <description>RSA private key (base64 PKCS#8) that signs delegated tokens. Generated automatically on first start. Treat it as a credential: anyone holding it can impersonate any user to this module.</description>
+    </globalProperty>
+    <globalProperty>
+        <property>agentgateway.signingPublicKey</property>
+        <defaultValue></defaultValue>
+        <description>RSA public key (base64 X.509) the agent service uses to verify delegated tokens. Generated automatically alongside the private key; safe to copy around.</description>
+    </globalProperty>
+
+    <filter>
+        <filter-name>agentgatewayAuditFilter</filter-name>
+        <filter-class>org.openmrs.module.agentgateway.web.filter.AgentAuditFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>agentgatewayAuditFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <messages>
+        <lang>en</lang>
+        <file>messages.properties</file>
+    </messages>
+    <messages>
+        <lang>fr</lang>
+        <file>messages_fr.properties</file>
+    </messages>
+
+    <mappingFiles>
+        org/openmrs/module/agentgateway/api/model/AgentOperationLog.hbm.xml
+    </mappingFiles>
+
+</module>

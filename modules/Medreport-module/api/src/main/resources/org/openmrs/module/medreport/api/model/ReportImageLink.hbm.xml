@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+        "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+        "http://hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping package="org.openmrs.module.medreport.api.model">
+    <!-- The report <-> image association table (RP9). Neither side owns a foreign key to
+         the other; both directions are queried through this row. -->
+    <class name="ReportImageLink" table="medreport_report_image">
+        <id name="id" type="int" column="report_image_id">
+            <generator class="native"/>
+        </id>
+        <many-to-one name="report" class="ImageReport" column="report_id" not-null="true"/>
+        <many-to-one name="version" class="ImageReportVersion" column="version_id" not-null="true"/>
+        <property name="orthancStudyUid" type="string" column="orthanc_study_uid" length="255" not-null="true"/>
+        <property name="orthancSeriesUid" type="string" column="orthanc_series_uid" length="255"/>
+        <property name="studyInstanceUid" type="string" column="study_instance_uid" length="255"/>
+        <property name="modality" type="string" column="modality" length="32"/>
+        <property name="studyDate" type="string" column="study_date" length="32"/>
+        <property name="studyDescription" type="string" column="study_description" length="255"/>
+        <property name="sortWeight" type="int" column="sort_weight"/>
+    </class>
+</hibernate-mapping>

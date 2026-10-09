@@ -1,0 +1,12 @@
+# Keep the image to what actually runs. Tests and their mock OpenMRS are for CI, not production,
+# and .env would bake this deployment's secrets into a layer.
+.env
+tests/
+pytest.ini
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+README.md
+docker-compose.yml

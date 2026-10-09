@@ -1,0 +1,32 @@
+# ohif-docker-compose.yml
+#
+# Phase 1: stand up OHIF against Orthanc's DICOMweb API to validate MPR,
+# volume rendering, and segmentation on real data before wiring in
+# OpenMRS launch context or a shared auth bridge (see ohif-app-config.js).
+#
+# orthanc-cors-proxy exists because Orthanc has no built-in CORS support
+# (confirmed in Orthanc's own docs) - the browser's DICOMweb requests from
+# OHIF get blocked without it. Run this alongside orthanc-docker-compose.yml,
+# e.g.:
+#   docker compose -f openmrs-docker-compose.yml -f orthanc-docker-compose.yml -f ohif-docker-compose.yml up -d
+
+services:
+  orthanc-cors-proxy:
+    image: nginx:alpine
+    container_name: orthanc-cors-proxy
+    restart: always
+    ports:
+      - "8043:80"
+    volumes:
+      - ./orthanc-cors-proxy.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - orthanc
+
+  ohif-viewer:
+    image: ohif/app:v3.9.2
+    container_name: ohif-viewer
+    restart: always
+    ports:
+      - "3000:80"
+    volumes:
+      - ./ohif-app-config.js:/usr/share/nginx/html/app-config.js:ro

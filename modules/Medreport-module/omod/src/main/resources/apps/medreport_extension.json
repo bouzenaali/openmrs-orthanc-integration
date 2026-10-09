@@ -1,0 +1,12 @@
+[
+  {
+    "id": "medreport.patientDashboard.generateReport",
+    "extensionPointId": "patientDashboard.overallActions",
+    "type": "link",
+    "label": "Générer le rapport",
+    "url": "medreport/patientReport.page?patientId={{patient.uuid}}",
+    "icon": "icon-file-alt",
+    "order": 2,
+    "requiredPrivilege": "App: medreport.dashboardGenerate"
+  }
+]

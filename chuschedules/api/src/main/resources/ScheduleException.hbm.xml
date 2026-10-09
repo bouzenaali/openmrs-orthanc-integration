@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+    "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping package="org.openmrs.module.chuschedules">
+
+    <class name="ScheduleException" table="chu_schedule_exception">
+        <id name="exceptionId" type="java.lang.Integer" column="exception_id">
+            <generator class="native"/>
+        </id>
+        <property name="exceptionDate" type="date" column="exception_date" not-null="true"/>
+        <property name="reason" type="java.lang.String" column="reason" length="255" not-null="true"/>
+
+        <!-- null provider means the exclusion is hospital-wide -->
+        <many-to-one name="provider" class="org.openmrs.Provider" column="provider_id"/>
+
+        <property name="dateCreated" type="java.util.Date" column="date_created" not-null="true"/>
+        <property name="dateChanged" type="java.util.Date" column="date_changed"/>
+        <property name="voided" type="java.lang.Boolean" column="voided" not-null="true"/>
+        <property name="dateVoided" type="java.util.Date" column="date_voided"/>
+        <property name="voidReason" type="java.lang.String" column="void_reason" length="255"/>
+        <property name="uuid" type="java.lang.String" column="uuid" length="38" unique="true" not-null="true"/>
+
+        <many-to-one name="creator" class="org.openmrs.User" column="creator" not-null="true"/>
+        <many-to-one name="changedBy" class="org.openmrs.User" column="changed_by"/>
+        <many-to-one name="voidedBy" class="org.openmrs.User" column="voided_by"/>
+    </class>
+
+</hibernate-mapping>

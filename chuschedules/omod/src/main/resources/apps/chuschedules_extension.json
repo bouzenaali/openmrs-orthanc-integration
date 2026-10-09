@@ -1,0 +1,12 @@
+[
+    {
+        "id": "org.openmrs.module.chuschedules.manageSchedules",
+        "extensionPointId": "systemAdministration.apps",
+        "type": "link",
+        "label": "Horaires récurrents",
+        "url": "chuschedules/manageSchedules.page",
+        "icon": "icon-calendar",
+        "order": 30,
+        "requiredPrivilege": "Manage Recurring Schedules"
+    }
+]

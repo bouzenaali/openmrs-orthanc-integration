@@ -1,0 +1,25 @@
+Segmentation ID,63887422-e37b-4782-95c9-d3f3ce195630
+Segmentation Label,PRE LIVER
+
+reference Series Number,2
+reference Series Instance UID,1.3.6.1.4.1.14519.5.2.1.1706.8374.139683127466268036038326476970
+reference Study Instance UID,1.3.6.1.4.1.14519.5.2.1.1706.8374.164750580271137946982420100377
+reference Series Description,PRE LIVER
+
+Segments Statistics
+Label,nninter_pred_20260923131611
+Segment Index,1
+Locked,No
+Active,Yes
+Min Value (HU),-496
+Max Value (HU),178
+Mean Value (HU),26.664801837347625
+Standard Deviation (none),39.280219411422436
+Median (none),36
+Skewness,-4.445547023750963
+Kurtosis,28.915184781012474
+Voxel Count,50943
+Max Coord,"-29.612503051757812,-74.21875,-233.67999267578125"
+Min Coord,"20.387496948242188,-4.6875,-238.67999267578125"
+Center,"9.051159646733037,-56.177875885793924,-242.6516865296964"
+Volume (cm³),155.4656982421875

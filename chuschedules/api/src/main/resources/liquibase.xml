@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <!--
+        Only chu_* tables are created here. No table belonging to appointmentscheduling is
+        altered, so that module stays free to upgrade its own schema.
+    -->
+
+    <changeSet id="chuschedules-1-template" author="chublida">
+        <comment>Recurring schedule templates</comment>
+        <createTable tableName="chu_schedule_template">
+            <column name="template_id" type="int" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="varchar(255)"><constraints nullable="false"/></column>
+            <column name="provider_id" type="int"><constraints nullable="false"/></column>
+            <column name="location_id" type="int"><constraints nullable="false"/></column>
+            <column name="valid_from" type="date"><constraints nullable="false"/></column>
+            <column name="valid_to" type="date"/>
+            <column name="active" type="boolean" defaultValueBoolean="true"><constraints nullable="false"/></column>
+            <column name="creator" type="int"><constraints nullable="false"/></column>
+            <column name="date_created" type="datetime"><constraints nullable="false"/></column>
+            <column name="changed_by" type="int"/>
+            <column name="date_changed" type="datetime"/>
+            <column name="voided" type="boolean" defaultValueBoolean="false"><constraints nullable="false"/></column>
+            <column name="voided_by" type="int"/>
+            <column name="date_voided" type="datetime"/>
+            <column name="void_reason" type="varchar(255)"/>
+            <column name="uuid" type="char(38)"><constraints nullable="false" unique="true"/></column>
+        </createTable>
+        <addForeignKeyConstraint constraintName="chu_template_provider_fk"
+            baseTableName="chu_schedule_template" baseColumnNames="provider_id"
+            referencedTableName="provider" referencedColumnNames="provider_id"/>
+        <addForeignKeyConstraint constraintName="chu_template_location_fk"
+            baseTableName="chu_schedule_template" baseColumnNames="location_id"
+            referencedTableName="location" referencedColumnNames="location_id"/>
+        <addForeignKeyConstraint constraintName="chu_template_creator_fk"
+            baseTableName="chu_schedule_template" baseColumnNames="creator"
+            referencedTableName="users" referencedColumnNames="user_id"/>
+    </changeSet>
+
+    <changeSet id="chuschedules-2-range" author="chublida">
+        <comment>One recurring session: weekday, times, and how it repeats</comment>
+        <createTable tableName="chu_schedule_template_range">
+            <column name="range_id" type="int" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="template_id" type="int"><constraints nullable="false"/></column>
+            <!-- java.util.Calendar convention: 1 = Sunday .. 7 = Saturday -->
+            <column name="day_of_week" type="tinyint"><constraints nullable="false"/></column>
+            <column name="start_time" type="time"><constraints nullable="false"/></column>
+            <column name="end_time" type="time"><constraints nullable="false"/></column>
+            <column name="recurrence_type" type="varchar(16)" defaultValue="WEEKLY">
+                <constraints nullable="false"/>
+            </column>
+            <!-- WEEKLY: 1 = every week, 2 = every other week, 3 = one week in three -->
+            <column name="week_interval" type="tinyint" defaultValueNumeric="1"/>
+            <!-- WEEKLY with interval > 1: the occurrence the cycle counts from -->
+            <column name="anchor_date" type="date"/>
+            <!-- MONTHLY_NTH: 1..4, or -1 for the last such weekday of the month -->
+            <column name="month_ordinal" type="tinyint"/>
+            <column name="creator" type="int"><constraints nullable="false"/></column>
+            <column name="date_created" type="datetime"><constraints nullable="false"/></column>
+            <column name="changed_by" type="int"/>
+            <column name="date_changed" type="datetime"/>
+            <column name="voided" type="boolean" defaultValueBoolean="false"><constraints nullable="false"/></column>
+            <column name="voided_by" type="int"/>
+            <column name="date_voided" type="datetime"/>
+            <column name="void_reason" type="varchar(255)"/>
+            <column name="uuid" type="char(38)"><constraints nullable="false" unique="true"/></column>
+        </createTable>
+        <addForeignKeyConstraint constraintName="chu_range_template_fk"
+            baseTableName="chu_schedule_template_range" baseColumnNames="template_id"
+            referencedTableName="chu_schedule_template" referencedColumnNames="template_id"/>
+        <addForeignKeyConstraint constraintName="chu_range_creator_fk"
+            baseTableName="chu_schedule_template_range" baseColumnNames="creator"
+            referencedTableName="users" referencedColumnNames="user_id"/>
+    </changeSet>
+
+    <changeSet id="chuschedules-3-template-type" author="chublida">
+        <comment>Which appointment types a template's blocks offer</comment>
+        <createTable tableName="chu_schedule_template_type">
+            <column name="template_id" type="int"><constraints nullable="false"/></column>
+            <column name="appointment_type_id" type="int"><constraints nullable="false"/></column>
+        </createTable>
+        <addPrimaryKey tableName="chu_schedule_template_type"
+            columnNames="template_id, appointment_type_id" constraintName="chu_template_type_pk"/>
+        <addForeignKeyConstraint constraintName="chu_template_type_template_fk"
+            baseTableName="chu_schedule_template_type" baseColumnNames="template_id"
+            referencedTableName="chu_schedule_template" referencedColumnNames="template_id"/>
+    </changeSet>
+
+    <changeSet id="chuschedules-4-exception" author="chublida">
+        <comment>Days off: public holidays globally, leave per provider</comment>
+        <createTable tableName="chu_schedule_exception">
+            <column name="exception_id" type="int" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="exception_date" type="date"><constraints nullable="false"/></column>
+            <!-- null means the exclusion applies to every provider -->
+            <column name="provider_id" type="int"/>
+            <column name="reason" type="varchar(255)"><constraints nullable="false"/></column>
+            <column name="creator" type="int"><constraints nullable="false"/></column>
+            <column name="date_created" type="datetime"><constraints nullable="false"/></column>
+            <column name="changed_by" type="int"/>
+            <column name="date_changed" type="datetime"/>
+            <column name="voided" type="boolean" defaultValueBoolean="false"><constraints nullable="false"/></column>
+            <column name="voided_by" type="int"/>
+            <column name="date_voided" type="datetime"/>
+            <column name="void_reason" type="varchar(255)"/>
+            <column name="uuid" type="char(38)"><constraints nullable="false" unique="true"/></column>
+        </createTable>
+        <addForeignKeyConstraint constraintName="chu_exception_provider_fk"
+            baseTableName="chu_schedule_exception" baseColumnNames="provider_id"
+            referencedTableName="provider" referencedColumnNames="provider_id"/>
+        <addForeignKeyConstraint constraintName="chu_exception_creator_fk"
+            baseTableName="chu_schedule_exception" baseColumnNames="creator"
+            referencedTableName="users" referencedColumnNames="user_id"/>
+        <createIndex tableName="chu_schedule_exception" indexName="chu_exception_date_idx">
+            <column name="exception_date"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="chuschedules-5-generated" author="chublida">
+        <comment>
+            Provenance and the idempotency key. The unique constraint on (range, date) is
+            what makes double-generation impossible in the database rather than merely
+            unlikely in code. block_uuid deliberately carries no foreign key: the
+            appointment block table belongs to another module.
+        </comment>
+        <createTable tableName="chu_generated_block">
+            <column name="generated_id" type="int" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="template_id" type="int"><constraints nullable="false"/></column>
+            <column name="range_id" type="int"><constraints nullable="false"/></column>
+            <column name="target_date" type="date"><constraints nullable="false"/></column>
+            <column name="block_uuid" type="char(38)"><constraints nullable="false"/></column>
+            <column name="creator" type="int"><constraints nullable="false"/></column>
+            <column name="date_created" type="datetime"><constraints nullable="false"/></column>
+            <column name="changed_by" type="int"/>
+            <column name="date_changed" type="datetime"/>
+            <column name="voided" type="boolean" defaultValueBoolean="false"><constraints nullable="false"/></column>
+            <column name="voided_by" type="int"/>
+            <column name="date_voided" type="datetime"/>
+            <column name="void_reason" type="varchar(255)"/>
+            <column name="uuid" type="char(38)"><constraints nullable="false" unique="true"/></column>
+        </createTable>
+        <addUniqueConstraint tableName="chu_generated_block"
+            columnNames="range_id, target_date" constraintName="chu_generated_range_date_uq"/>
+        <addForeignKeyConstraint constraintName="chu_generated_template_fk"
+            baseTableName="chu_generated_block" baseColumnNames="template_id"
+            referencedTableName="chu_schedule_template" referencedColumnNames="template_id"/>
+        <addForeignKeyConstraint constraintName="chu_generated_range_fk"
+            baseTableName="chu_generated_block" baseColumnNames="range_id"
+            referencedTableName="chu_schedule_template_range" referencedColumnNames="range_id"/>
+        <addForeignKeyConstraint constraintName="chu_generated_creator_fk"
+            baseTableName="chu_generated_block" baseColumnNames="creator"
+            referencedTableName="users" referencedColumnNames="user_id"/>
+        <createIndex tableName="chu_generated_block" indexName="chu_generated_block_uuid_idx">
+            <column name="block_uuid"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

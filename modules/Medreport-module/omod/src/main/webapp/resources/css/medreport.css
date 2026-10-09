@@ -1,0 +1,747 @@
+/*
+ * medreport styles.
+ *
+ * Every class is `mr-`-prefixed, with no exceptions. The Reference Application loads
+ * Bootstrap globally, so generic names like .panel, .btn, .modal, .close, .badge are already
+ * taken and silently restyle anything that reuses them - a collision that has already broken
+ * the patientview UI once. The prefix is the fix.
+ */
+
+:root {
+    --mr-accent: #1f4e79;
+    --mr-accent-soft: #e8f0f8;
+    --mr-accent-dark: #163a5a;
+    --mr-border: #d6dee7;
+    --mr-muted: #6b7885;
+    --mr-text: #1f2933;
+    --mr-danger: #a02020;
+    --mr-danger-soft: #fbeaea;
+    --mr-ok: #1b6e34;
+    --mr-ok-soft: #e8f4ec;
+    --mr-warn: #8a6100;
+    --mr-warn-soft: #fdf3e0;
+    --mr-radius: 6px;
+}
+
+/* ---------- layout ---------- */
+
+.mr-wrap {
+    max-width: 1180px;
+    margin: 0 auto 3rem;
+    color: var(--mr-text);
+    font-size: 14px;
+}
+
+.mr-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    border-bottom: 3px solid var(--mr-accent);
+    padding-bottom: .7rem;
+    margin-bottom: 1.2rem;
+}
+
+.mr-header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--mr-accent);
+}
+
+.mr-header .mr-sub {
+    color: var(--mr-muted);
+    margin: .2rem 0 0;
+    font-size: .92rem;
+}
+
+.mr-patient-chip {
+    background: var(--mr-accent-soft);
+    border: 1px solid var(--mr-border);
+    border-radius: var(--mr-radius);
+    padding: .5rem .9rem;
+    font-size: .88rem;
+    line-height: 1.5;
+}
+
+.mr-patient-chip strong {
+    color: var(--mr-accent);
+}
+
+/* Two columns: the selection tree, and a sticky summary/preview rail. */
+.mr-columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 1.4rem;
+    align-items: start;
+}
+
+@media (max-width: 980px) {
+    .mr-columns {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .mr-rail {
+        position: static !important;
+    }
+}
+
+.mr-rail {
+    position: sticky;
+    top: 1rem;
+}
+
+/* ---------- panels ---------- */
+
+.mr-panel {
+    background: #fff;
+    border: 1px solid var(--mr-border);
+    border-radius: var(--mr-radius);
+    margin-bottom: 1.1rem;
+    overflow: hidden;
+}
+
+.mr-panel > h2 {
+    margin: 0;
+    padding: .6rem .9rem;
+    font-size: .95rem;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+    color: var(--mr-accent);
+    background: var(--mr-accent-soft);
+    border-bottom: 1px solid var(--mr-border);
+}
+
+.mr-panel-body {
+    padding: .9rem;
+}
+
+.mr-panel-body > p:first-child {
+    margin-top: 0;
+}
+
+/* ---------- form controls ---------- */
+
+.mr-field {
+    margin-bottom: .9rem;
+}
+
+.mr-field > label {
+    display: block;
+    font-weight: 600;
+    font-size: .85rem;
+    color: var(--mr-muted);
+    margin-bottom: .25rem;
+}
+
+.mr-input,
+.mr-select {
+    width: 100%;
+    padding: .42rem .55rem;
+    border: 1px solid var(--mr-border);
+    border-radius: 4px;
+    font-size: .9rem;
+    background: #fff;
+    color: var(--mr-text);
+    box-sizing: border-box;
+}
+
+.mr-input:focus,
+.mr-select:focus {
+    outline: 2px solid var(--mr-accent);
+    outline-offset: -1px;
+}
+
+.mr-textarea {
+    width: 100%;
+    min-height: 190px;
+    padding: .55rem;
+    border: 1px solid var(--mr-border);
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: .92rem;
+    line-height: 1.55;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+/* Segmented control used for language and format - fewer clicks than a select and it
+   shows every option at once, which matters for a 3-language choice. */
+.mr-segment {
+    display: flex;
+    border: 1px solid var(--mr-border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.mr-segment button {
+    flex: 1;
+    padding: .4rem .3rem;
+    border: 0;
+    border-right: 1px solid var(--mr-border);
+    background: #fff;
+    cursor: pointer;
+    font-size: .85rem;
+    color: var(--mr-text);
+}
+
+.mr-segment button:last-child {
+    border-right: 0;
+}
+
+.mr-segment button[aria-pressed="true"] {
+    background: var(--mr-accent);
+    color: #fff;
+    font-weight: 600;
+}
+
+.mr-segment button:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+/* ---------- buttons ---------- */
+
+.mr-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .45rem .9rem;
+    border: 1px solid var(--mr-accent);
+    border-radius: 4px;
+    background: #fff;
+    color: var(--mr-accent);
+    font-size: .88rem;
+    cursor: pointer;
+    text-decoration: none;
+    line-height: 1.4;
+}
+
+.mr-btn:hover:not(:disabled) {
+    background: var(--mr-accent-soft);
+}
+
+.mr-btn-primary {
+    background: var(--mr-accent);
+    color: #fff;
+}
+
+.mr-btn-primary:hover:not(:disabled) {
+    background: var(--mr-accent-dark);
+    color: #fff;
+}
+
+.mr-btn-danger {
+    border-color: var(--mr-danger);
+    color: var(--mr-danger);
+}
+
+.mr-btn-danger:hover:not(:disabled) {
+    background: var(--mr-danger-soft);
+}
+
+.mr-btn-small {
+    padding: .25rem .55rem;
+    font-size: .8rem;
+}
+
+/* A disabled action is visibly disabled AND explains itself via title= - "why is this
+   greyed out" is otherwise the most common support question for a permissioned UI. */
+.mr-btn:disabled,
+.mr-btn[disabled] {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+.mr-btn-link {
+    border: 0;
+    background: none;
+    color: var(--mr-accent);
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0;
+    font-size: .82rem;
+}
+
+.mr-toolbar {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+/* ---------- selection tree ---------- */
+
+.mr-tree-tools {
+    display: flex;
+    gap: .5rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: .7rem;
+    padding-bottom: .7rem;
+    border-bottom: 1px dashed var(--mr-border);
+}
+
+.mr-tree-tools .mr-input {
+    flex: 1;
+    min-width: 160px;
+}
+
+.mr-group {
+    margin-bottom: 1rem;
+}
+
+.mr-group-label {
+    font-size: .75rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--mr-muted);
+    margin: 0 0 .35rem;
+    font-weight: 700;
+}
+
+.mr-node {
+    border: 1px solid var(--mr-border);
+    border-radius: 4px;
+    margin-bottom: .45rem;
+    background: #fff;
+}
+
+.mr-node-head {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .45rem .6rem;
+}
+
+.mr-node-head:hover {
+    background: #fafcfe;
+}
+
+.mr-twisty {
+    border: 0;
+    background: none;
+    cursor: pointer;
+    color: var(--mr-muted);
+    font-size: .8rem;
+    width: 1.2rem;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.mr-twisty.mr-empty {
+    visibility: hidden;
+}
+
+.mr-node-title {
+    flex: 1;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: .9rem;
+}
+
+.mr-node-desc {
+    display: block;
+    font-weight: 400;
+    font-size: .78rem;
+    color: var(--mr-muted);
+    margin-top: .1rem;
+}
+
+.mr-count {
+    font-size: .74rem;
+    color: var(--mr-muted);
+    background: var(--mr-accent-soft);
+    border-radius: 10px;
+    padding: .05rem .5rem;
+    white-space: nowrap;
+}
+
+.mr-node-body {
+    padding: .1rem .6rem .6rem 2.3rem;
+    border-top: 1px dashed var(--mr-border);
+}
+
+.mr-node-body[hidden] {
+    display: none;
+}
+
+.mr-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: .1rem .8rem;
+    margin-top: .45rem;
+}
+
+.mr-check {
+    display: flex;
+    align-items: flex-start;
+    gap: .4rem;
+    padding: .2rem 0;
+    font-size: .86rem;
+    cursor: pointer;
+}
+
+.mr-check input {
+    margin: .2rem 0 0;
+    flex-shrink: 0;
+}
+
+.mr-check.mr-disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+/* ---------- inline toolbar controls (imaging panel) ---------- */
+
+.mr-inline-label {
+    font-size: .82rem;
+    font-weight: 600;
+    color: var(--mr-muted);
+    white-space: nowrap;
+}
+
+.mr-select-inline {
+    width: auto;
+    min-width: 210px;
+    max-width: 340px;
+}
+
+.mr-check-inline {
+    white-space: nowrap;
+    font-size: .84rem;
+}
+
+/* The multi-select image list in the report editor. Capped and scrollable so a patient with
+   twenty studies does not push the Save button off screen. */
+.mr-picker {
+    border: 1px solid var(--mr-border);
+    border-radius: 4px;
+    padding: .4rem .6rem;
+    max-height: 190px;
+    overflow-y: auto;
+    background: #fff;
+}
+
+.mr-picker .mr-check {
+    border-bottom: 1px dashed var(--mr-border);
+}
+
+.mr-picker .mr-check:last-child {
+    border-bottom: 0;
+}
+
+/* ---------- summary rail ---------- */
+
+.mr-summary-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: .85rem;
+    max-height: 210px;
+    overflow-y: auto;
+}
+
+.mr-summary-list li {
+    padding: .22rem 0;
+    border-bottom: 1px dashed var(--mr-border);
+    display: flex;
+    justify-content: space-between;
+    gap: .5rem;
+}
+
+.mr-summary-list li:last-child {
+    border-bottom: 0;
+}
+
+.mr-summary-list .mr-count {
+    background: none;
+}
+
+/* ---------- notices ---------- */
+
+.mr-note {
+    border-radius: 4px;
+    padding: .55rem .75rem;
+    font-size: .85rem;
+    margin: 0 0 .8rem;
+    border: 1px solid transparent;
+}
+
+.mr-note-info {
+    background: var(--mr-accent-soft);
+    border-color: #c5d8ea;
+    color: var(--mr-accent-dark);
+}
+
+.mr-note-warn {
+    background: var(--mr-warn-soft);
+    border-color: #e8cf9a;
+    color: var(--mr-warn);
+}
+
+.mr-note-error {
+    background: var(--mr-danger-soft);
+    border-color: #e8b4b4;
+    color: var(--mr-danger);
+}
+
+.mr-note-ok {
+    background: var(--mr-ok-soft);
+    border-color: #b6d9c2;
+    color: var(--mr-ok);
+}
+
+.mr-access-denied {
+    max-width: 620px;
+    margin: 3rem auto;
+    text-align: center;
+    border: 1px solid #e8b4b4;
+    background: var(--mr-danger-soft);
+    color: var(--mr-danger);
+    padding: 1.6rem;
+    border-radius: var(--mr-radius);
+}
+
+/* ---------- preview ---------- */
+
+.mr-preview-frame {
+    width: 100%;
+    height: 72vh;
+    border: 1px solid var(--mr-border);
+    border-radius: 4px;
+    background: #f2f5f8;
+}
+
+.mr-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 30, 40, .55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9000;
+    padding: 1.5rem;
+}
+
+.mr-overlay[hidden] {
+    display: none;
+}
+
+.mr-dialog {
+    background: #fff;
+    border-radius: var(--mr-radius);
+    width: min(1000px, 100%);
+    max-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, .3);
+}
+
+.mr-dialog-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: .7rem 1rem;
+    background: var(--mr-accent);
+    color: #fff;
+}
+
+.mr-dialog-head h2 {
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+.mr-dialog-close {
+    background: none;
+    border: 0;
+    color: #fff;
+    font-size: 1.4rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 .3rem;
+}
+
+.mr-dialog-body {
+    padding: 1rem;
+    overflow-y: auto;
+}
+
+.mr-dialog-foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: .5rem;
+    padding: .7rem 1rem;
+    border-top: 1px solid var(--mr-border);
+    background: #fafcfe;
+}
+
+/* ---------- report list (imaging tab) ---------- */
+
+.mr-report {
+    border: 1px solid var(--mr-border);
+    border-left: 4px solid var(--mr-accent);
+    border-radius: 4px;
+    padding: .7rem .85rem;
+    margin-bottom: .7rem;
+    background: #fff;
+}
+
+.mr-report.mr-own {
+    border-left-color: var(--mr-ok);
+}
+
+.mr-report.mr-removed {
+    border-left-color: var(--mr-danger);
+    background: #fdfafa;
+}
+
+.mr-report-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: .8rem;
+    flex-wrap: wrap;
+}
+
+.mr-report-title {
+    font-weight: 700;
+    color: var(--mr-accent);
+}
+
+.mr-meta {
+    font-size: .8rem;
+    color: var(--mr-muted);
+}
+
+.mr-meta strong {
+    color: var(--mr-text);
+}
+
+.mr-tag {
+    display: inline-block;
+    font-size: .7rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    padding: .1rem .45rem;
+    border-radius: 3px;
+    background: var(--mr-accent-soft);
+    color: var(--mr-accent);
+    font-weight: 700;
+}
+
+.mr-tag-own {
+    background: var(--mr-ok-soft);
+    color: var(--mr-ok);
+}
+
+.mr-tag-removed {
+    background: var(--mr-danger-soft);
+    color: var(--mr-danger);
+}
+
+.mr-report-text {
+    white-space: pre-wrap;
+    margin: .5rem 0;
+    font-size: .89rem;
+    line-height: 1.55;
+}
+
+.mr-images {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .3rem;
+    margin: .4rem 0;
+}
+
+.mr-image-chip {
+    font-size: .75rem;
+    background: #f2f6fa;
+    border: 1px solid var(--mr-border);
+    border-radius: 10px;
+    padding: .1rem .5rem;
+    color: var(--mr-muted);
+}
+
+.mr-report-actions {
+    display: flex;
+    gap: .4rem;
+    flex-wrap: wrap;
+    margin-top: .5rem;
+    padding-top: .5rem;
+    border-top: 1px dashed var(--mr-border);
+}
+
+.mr-empty {
+    color: var(--mr-muted);
+    font-style: italic;
+    padding: 1.2rem;
+    text-align: center;
+}
+
+/* ---------- tables ---------- */
+
+.mr-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .85rem;
+}
+
+.mr-table th,
+.mr-table td {
+    text-align: left;
+    padding: .4rem .55rem;
+    border-bottom: 1px solid var(--mr-border);
+    vertical-align: top;
+}
+
+.mr-table th {
+    background: var(--mr-accent-soft);
+    color: var(--mr-accent);
+    font-size: .78rem;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+}
+
+.mr-table tr:hover td {
+    background: #fafcfe;
+}
+
+.mr-scroll {
+    overflow-x: auto;
+}
+
+/* ---------- spinner ---------- */
+
+.mr-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, .4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: mr-spin .7s linear infinite;
+}
+
+.mr-btn:not(.mr-btn-primary) .mr-spinner {
+    border-color: rgba(31, 78, 121, .3);
+    border-top-color: var(--mr-accent);
+}
+
+@keyframes mr-spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mr-spinner { animation-duration: 2s; }
+}
+
+.mr-visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}

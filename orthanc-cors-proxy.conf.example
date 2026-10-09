@@ -1,0 +1,52 @@
+# EXAMPLE ONLY — the live file is untracked and holds a real credential.
+# Copy to orthanc-cors-proxy.conf and set the Authorization header to the
+# base64 of <user>:<password>, taken from .env (ORTHANC_PROXY_AUTH_B64).
+# The live file is a SINGLE-FILE BIND MOUNT: edit it with `cat new > file`,
+# never `sed -i`, or the container keeps serving the old inode.
+# See ohif-ai-integration.md 4.2.3.
+
+server {
+    listen 80;
+
+    # OHIF writes segmentations back via STOW-RS POST; the stock nginx:alpine
+    # 1 MB default rejected them. 0 = no limit.
+    # nginx-proxy-manager in front of this container sets 2000m in its own
+    # nginx.conf, so this was the only ceiling in the path.
+    client_max_body_size 0;
+
+    location / {
+        # CORS handling here is VESTIGIAL for OHIF. NPM serves the viewer and
+        # /dicom-web from the same origin (https://viewer.hospital.lan), so the
+        # browser sends no preflight and ignores these headers entirely. It is
+        # retained only for direct access via http://localhost:3000, which is
+        # cross-origin to http://localhost:8043.
+        # Answer the browser's CORS preflight directly - Orthanc has no
+        # handler for a bare OPTIONS request, so this must not be proxied through.
+        if ($request_method = OPTIONS) {
+            add_header 'Access-Control-Allow-Origin' 'http://localhost:3000' always;
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
+            add_header 'Access-Control-Allow-Headers' 'Authorization, Content-Type, Accept' always;
+            add_header 'Access-Control-Max-Age' 3600;
+            return 204;
+        }
+
+        add_header 'Access-Control-Allow-Origin' 'http://localhost:3000' always;
+        # Server-side Basic Auth injection. This is the PRODUCTION mechanism, not a
+        # diagnostic. proxy_set_header OVERWRITES whatever the client sent, so the
+        # browser never needs - and cannot influence - Orthanc credentials.
+        # A password prompt reaching a user means this proxy has been bypassed;
+        # typing the password and seeing images is NOT a passing test.
+        # The value must match ORTHANC__REGISTERED_USERS in
+        # orthanc-docker-compose.yml. Do not reproduce it in docs or comments.
+        #
+        # Body-size limit is lifted at the server level above
+        # (client_max_body_size 0), which STOW-RS segmentation writes require.
+        # NOTE: this is stock nginx:alpine, so client_max_body_size defaults to 1 MB.
+        # That is enough for reads, but OHIF writes segmentations back via STOW-RS
+        # POST and will fail until 'client_max_body_size 0;' is added here.
+        proxy_set_header Authorization "Basic __REPLACE_WITH_BASE64_OF_user:password__";
+        proxy_pass http://orthanc:8042;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}

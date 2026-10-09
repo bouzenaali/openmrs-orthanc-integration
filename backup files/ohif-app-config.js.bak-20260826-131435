@@ -1,0 +1,40 @@
+window.config = {
+  routerBasename: '/',
+  extensions: [],
+  modes: [],
+  showStudyList: true,
+  dataSources: [
+    {
+      namespace: '@ohif/extension-default.dataSourcesModule.dicomweb',
+      sourceName: 'orthanc',
+      configuration: {
+        friendlyName: 'OpenMRS Orthanc PACS',
+        name: 'orthanc',
+        // Browser-side URLs: OHIF runs client-side JS, so these must be
+        // reachable from the radiologist's browser, not just container-to-container.
+        // Routed through orthanc-cors-proxy (port 8043) because Orthanc itself
+        // sends no CORS headers - hitting :8042 directly fails from the browser.
+        // Swap for the real nginx-routed path once the reverse proxy is in front of everything.
+        wadoUriRoot: 'http://localhost:8043/wado',
+        qidoRoot: 'http://localhost:8043/dicom-web',
+        wadoRoot: 'http://localhost:8043/dicom-web',
+        qidoSupportsIncludeField: true,
+        supportsReject: true,
+        imageRendering: 'wadors',
+        thumbnailRendering: 'wadors',
+        enableStudyLazyLoad: true,
+        supportsFuzzyMatching: true,
+        supportsWildcard: true,
+        requestOptions: {
+          // Matches ORTHANC__REGISTERED_USERS in orthanc-docker-compose.yml.
+          // Dev/validation only - credentials in this file are downloadable
+          // by anyone who loads the viewer. Replace with the OIDC-based
+          // auth bridge (docs.ohif.org/deployment/authorization) before
+          // this goes anywhere near production.
+          auth: 'orthanc:orthanc_admin_password',
+        },
+      },
+    },
+  ],
+  defaultDataSourceName: 'orthanc',
+};

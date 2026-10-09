@@ -82,6 +82,9 @@ prompt while OHIF does not.
 - **HTTPS everywhere** via Nginx Proxy Manager with a private CA certificate.
 - **No credentials in the browser** — Orthanc authentication is injected server-side.
 - **DICOM worklist** support, so modalities can query scheduled procedures.
+- **Recurring provider schedules** (`chuschedules` 1.0.0) — define a clinic's weekly or
+  monthly pattern once and generate appointment blocks from it, instead of entering one
+  block per provider per day by hand.
 
 ## Prerequisites
 
@@ -99,6 +102,7 @@ prompt while OHIF does not.
 ```
 openmrs-orthanc-integration/
 ├── custom-imaging-openmrs/          # the customised OpenMRS imaging module (1.2.0)
+├── chuschedules/                    # recurring provider schedules module (1.0.0) — see its README
 ├── backup files/                    # timestamped backups of config files
 ├── module-backups/                  # timestamped backups of module source
 ├── openmrs-docker-compose.yml       # OpenMRS + MySQL
@@ -108,6 +112,8 @@ openmrs-orthanc-integration/
 ├── orthanc-cors-proxy.conf          # nginx config (bind-mounted into orthanc-cors-proxy)
 ├── .env                             # secrets not committed (MEDREPORT_RGS_TOKEN)
 ├── OHIF-Integration-Architecture.md # OHIF chain: TLS, routing, authentication
+├── HANDOFF-2026-08-30.md            # outstanding work, prioritised, with rollbacks
+├── Recurring-Schedules-Design.md    # design + traps for the chuschedules module
 ├── CLAUDE.md                        # working guidelines + project-specific hazards
 └── README.md
 ```
@@ -181,6 +187,16 @@ cd custom-imaging-openmrs && mvn clean package -DskipTests
 
 The artifact lands at `omod/target/imaging-1.2.0.omod`.
 
+- the recurring-schedules module — build it from `chuschedules/`:
+
+```bash
+cd chuschedules && ./validate-xml.sh && mvn clean package
+```
+
+The artifact lands at `omod/target/chuschedules-1.0.0.omod`. **Run `validate-xml.sh`
+first**: a malformed XML file in any module brings down the whole OpenMRS web context, not
+just that module. See [`chuschedules/README.md`](chuschedules/README.md).
+
 ### 6. Configure
 
 See [Configuration Details](#configuration-details) — three separate settings are
@@ -231,6 +247,37 @@ A **global property**, at **Administration → Maintenance → Settings → Imag
 ```
 imaging.ohifBaseUrl = https://viewer.hospital.lan
 ```
+imaging.ohifBaseUrl = https://viewer.hospital.lan
+```
+
+No trailing slash and no surrounding whitespace. **When empty, the OHIF button does not
+render** — deliberate, so the module degrades cleanly where OHIF is not deployed. Set it
+through the UI, not by SQL: OpenMRS caches global properties in memory, and a direct
+`UPDATE` leaves the running application serving the old value.
+
+This is a global property, **not** a field on the Orthanc configuration page.
+
+### Nginx Proxy Manager
+
+Web UI at `http://<server-ip>:81`. Create one proxy host per hostname, always targeting
+**internal** ports (see the table in
+[Architecture at a glance](#architecture-at-a-glance)).
+
+Host 3 (`viewer.hospital.lan`) additionally needs two **Custom Locations**, `/dicom-web`
+and `/wado`, both forwarding to `orthanc-cors-proxy` port `80`. That is what makes OHIF
+same-origin with its data. Full rationale in
+[`OHIF-Integration-Architecture.md`](OHIF-Integration-Architecture.md).
+
+> **Certificates:** `hospital.lan` is an internal domain, so **Let's Encrypt cannot issue
+> for it** — do not attempt the automated flow. This deployment uses a certificate signed
+> by the hospital's own CA, uploaded to NPM as a Custom Certificate (`npm-3`), covering
+> `openmrs.hospital.lan`, `orthanc.hospital.lan` and `viewer.hospital.lan`, valid to 2036.
+
+### DNS
+
+`*.hospital.lan` must resolve to the server's LAN address **on client machines**. The
+server itself uses an external resolver and cannot resolve these names — that is expected,
+does not affect the containers, and should not be "fixed".
 
 No trailing slash and no surrounding whitespace. **When empty, the OHIF button does not
 render** — deliberate, so the module degrades cleanly where OHIF is not deployed. Set it
@@ -313,9 +360,9 @@ request and its status, which separates a networking fault from a rendering one.
 | `403` on DICOMweb URLs | NPM's "Block Common Exploits" rejects some DICOMweb paths. Disable that toggle on the host. |
 | Studies deleted from Orthanc still listed | Fixed in module 1.2.0. Run **Get studies** to reconcile — Orthanc's change log contains no deletion events, so only a full fetch prunes them. |
 | OHIF loads the study but shows no images | Client-side rendering. OHIF needs **WebGL2**. On a server with no GPU, recent Chrome disables the software fallback — launch with `--enable-unsafe-swiftshader`, or use a workstation with a GPU. |
-| Saving a segmentation fails | `orthanc-cors-proxy` is stock `nginx:alpine` with a 1 MB `client_max_body_size`. Add `client_max_body_size 0;` to `orthanc-cors-proxy.conf`. |
+| Saving a segmentation fails | Body-size limit — resolved 2026-09-01 by setting `client_max_body_size 0;` in `orthanc-cors-proxy.conf`. If it recurs, re-check that directive is present and that `nginx -s reload` was run. |
 | Certificate warning in the browser | The hospital CA is not trusted on that client. Install `certificates/hospitalCA.crt`. |
-| Random `500`s after the stack idles for days | Stale pooled DB connections (c3p0 has no validation configured, MySQL closes idle connections after 8 h). `docker restart openmrs-app`. |
+| Random `500`s after the stack idles for days | Stale pooled DB connections. **2026-09-07:** `hibernate.c3p0.min_size=2` set in `openmrs-runtime.properties` (was 0, which let the pool shrink to nothing before its own 50-min idle test ever ran) — see `HANDOFF-2026-08-30.md` §4.1 for why the originally-planned fix wouldn't have worked in this Hibernate version, and note **this has not yet been observed to actually prevent a recurrence** over a real multi-day idle period. Meanwhile: `docker restart openmrs-app`. |
 
 ### Editing bind-mounted files — the inode trap
 
@@ -331,10 +378,22 @@ docker exec orthanc-cors-proxy nginx -t && docker exec orthanc-cors-proxy nginx 
 
 ## Security notes
 
-- **Credentials are currently in the compose files, not `.env`.** `orthanc-docker-compose.yml`
-  carries `ORTHANC__REGISTERED_USERS` and the PostgreSQL password inline;
-  `openmrs-docker-compose.yml` carries the MySQL password. Moving them to `.env` and
-  rotating them is outstanding work. Do not copy these values into documentation.
+- **⚠️ Credentials are publicly exposed on GitHub — an accepted risk for this
+  development environment, not an oversight.** This repo
+  (`github.com/bouzenaali/openmrs-orthanc-integration`) is **public**. Its `origin/main`
+  tip tracks a committed `.env` and `orthanc-docker-compose.yml`, and both were confirmed
+  (2026-09-07, via SHA-256 comparison, without ever printing the values) to hold the
+  **exact same credentials currently in live use** — the real Orthanc admin password and
+  the real `MEDREPORT_RGS_TOKEN`, not stale placeholders. `orthanc-docker-compose.yml`
+  also carries the MySQL and PostgreSQL passwords inline.
+  **Decision (2026-09-07): left as-is for development.** Do not rotate these credentials,
+  make the repo private, or rewrite git history without a fresh decision — this is
+  deliberate, not neglect. **Before any production deployment**, all of §4.3 in
+  `HANDOFF-2026-08-30.md` is mandatory: rotate every credential ever committed (not just
+  the current one), move secrets into `.env` (and add `.env` to `.gitignore`, which
+  currently does not list it), and either make the repo private or treat every
+  historically-committed value as permanently compromised. Do not copy any of these
+  values into documentation.
 - **Access to `viewer.hospital.lan` is access to Orthanc.** The proxy authenticates on the
   caller's behalf, so anyone who can reach that host has authenticated access to the whole
   DICOMweb API, including deletion. Control is **network-level**, not password-level.

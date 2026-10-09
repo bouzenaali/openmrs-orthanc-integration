@@ -1,0 +1,339 @@
+# HANDOFF — remaining work, OHIF/Orthanc integration
+
+**Date:** 2026-08-30
+**Project:** openmrs-orthanc-integration — Neurosurgery, CHU Blida
+**Server:** `server-PowerEdge-T140`, LAN `10.0.211.249` (`eno1`)
+**Imaging module:** **1.2.0**, deployed and running
+
+---
+
+## 0. Read this first
+
+The OHIF integration **works**. This document lists only what is left.
+
+Before doing anything here, read:
+
+| Document | For |
+| --- | --- |
+| `CLAUDE.md` → *Project-specific rules* | working protocol and the traps that have actually bitten |
+| `OHIF-Integration-Architecture.md` | the OHIF chain: TLS, routing, auth injection |
+| `README.md` | the deployed system, configuration, troubleshooting |
+
+**Carry over the working protocol:** one change at a time; read-only before any write;
+timestamped backups into `backup files/`; state WHERE each command runs; never claim
+something works without demonstrating it. **No `git` write commands on this repo.**
+
+---
+
+## 1. Verified working — do not redo
+
+| Thing | Evidence |
+| --- | --- |
+| HTTPS chain end to end | `https://viewer.hospital.lan/` → 200; `/dicom-web/studies?limit=1` → 200 `application/dicom+json` |
+| **No password prompt** | no `WWW-Authenticate` header; auth injected server-side by `orthanc-cors-proxy` |
+| OHIF loads studies | NPM host-3 access log: 23 metadata + 17 frame requests, **all 200**, 7.1 MB delivered |
+| Module 1.2.0 deployed | `imaging-1.2.0.omod` installed and started |
+| **Stale-study pruning (Bug 1)** | rows 6 → 2, matching Orthanc exactly, plus `WARN … Removing study 1.2.826.0.1.3680043.8.853.2.1245427 assigned to patient 9: no longer present on http://orthanc:8042` |
+| Image rendering | confirmed working from other hosts. This server has no GPU and is **not** a display machine — that is expected and is not a defect. |
+
+Two log lines that look alarming and are **not**:
+
+- `ERROR - ImagingActivator.started(29) Started Imaging` — a success message at the wrong level.
+- `IllegalStateException: Filters can not be added to context /openmrs …` — normal after a hot module upload.
+
+---
+
+## 2. Priority 1 — quick wins
+
+### 2.1 `client_max_body_size` — ✅ DONE 2026-09-01
+
+**Applied.** `client_max_body_size 0;` added at the `server` level of
+`orthanc-cors-proxy.conf`, validated with `nginx -t`, applied with a graceful
+`nginx -s reload`. Inode preserved (bind mount intact).
+
+**Verified** with a POST to a nonexistent path, which creates nothing:
+
+| Probe | Before | After |
+| --- | --- | --- |
+| 2 MB POST via `orthanc-cors-proxy:8043` | 413 | **404** (forwarded to Orthanc) |
+| 2 MB POST via `https://viewer.hospital.lan` | 413 | **404** |
+| 20 MB POST via `https://viewer.hospital.lan` | — | **404** |
+| `GET /dicom-web/studies?limit=1` (regression) | 200 | **200** `application/dicom+json` |
+
+**Correction to an earlier assumption:** Nginx Proxy Manager was *not* a second ceiling.
+It sets `client_max_body_size 2000m;` in its own `/etc/nginx/nginx.conf`. The 413 initially
+observed through NPM was the CORS proxy's 413 being relayed back through it. **No NPM change
+was needed.**
+
+**Still to confirm by actually using it:** save a segmentation brush stroke from a
+workstation. The transport limit is proven lifted; whether OHIF's STOW-RS write succeeds
+end to end is a separate assertion that only a real save can settle.
+
+**ROLLBACK:** `cat "backup files/orthanc-cors-proxy.conf.bak-20260901-104751" > orthanc-cors-proxy.conf`
+then `docker exec orthanc-cors-proxy nginx -t && docker exec orthanc-cors-proxy nginx -s reload`
+
+---
+
+### 2.2 Install the hospital CA so browsers stop warning
+
+**CLASS:** FILE CHANGE, requires `sudo`
+
+**Status:** not installed — `curl https://viewer.hospital.lan/` without `-k` returns `000`.
+
+**Why:** certificates are signed by CHU Blida's own CA. Untrusted clients show a warning on
+every load. Because OHIF is same-origin, accepting once is *enough to work*, but that trains
+clinicians to click through security warnings.
+
+```bash
+sudo cp /home/server/certificates/hospitalCA.crt /usr/local/share/ca-certificates/hospitalCA.crt
+```
+
+```bash
+sudo update-ca-certificates
+```
+
+**Verify** — should now return `200` **without** `-k`:
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' https://viewer.hospital.lan/
+```
+
+Chrome and Firefox keep their **own** trust stores, so the system store alone may not be
+enough. If the warning persists, import into the browser's NSS database — note `certutil`
+is **not currently installed** on this host:
+
+```bash
+sudo apt install libnss3-tools
+```
+
+```bash
+certutil -d sql:$HOME/.pki/nssdb -A -t "C,," -n "CHU Blida CA" -i /home/server/certificates/hospitalCA.crt
+```
+
+`~/.pki/nssdb` exists and is what the `.deb` Chrome (`/usr/bin/google-chrome`) uses.
+Snap-packaged Chromium keeps a separate store at `~/snap/chromium/current/.pki/nssdb`,
+which is created on first run and does not exist yet — import there too if you use it.
+
+Certificate being installed, for reference:
+`CN = CHU Blida Internal CA, O = CHU Blida` — valid until 2036-08-02.
+
+**This must be done on every clinical workstation**, not just the server.
+
+**ROLLBACK:** `sudo rm /usr/local/share/ca-certificates/hospitalCA.crt && sudo update-ca-certificates --fresh`
+
+---
+
+### 2.3 Confirm the OHIF icon on the "Get studies" page (Bug 2)
+
+**CLASS:** READ-ONLY (just look)
+
+**Status:** code and packaged artifact verified; **never visually confirmed** — the sync page
+has not been opened since the upgrade.
+
+The bug was that the icon appeared on a patient's own studies but vanished on studies fetched
+from the PACS. Two independent omissions, both fixed in 1.2.0:
+`SyncStudiesPageController` never published `ohifBaseUrl`, and `syncStudies.gsp` had no OHIF
+markup.
+
+**Verify:** open a patient → **Get studies** → each row's Actions column should show **three**
+icons: Stone Viewer, **OHIF**, Orthanc Explorer.
+
+If the OHIF icon is missing, check `imaging.ohifBaseUrl` is still set — the markup is wrapped
+in `<% if (ohifBaseUrl?.trim()) { %>`.
+
+---
+
+## 3. Priority 2 — before clinical use
+
+### 3.1 DNS record for `viewer.hospital.lan`
+
+**CLASS:** change on the internal DNS server (not this machine)
+
+**Status:** only an `/etc/hosts` entry on this server. **No workstation can reach the viewer.**
+
+Add an **A record**: `viewer.hospital.lan` → `10.0.211.249`, alongside the existing
+`orthanc.hospital.lan` and `openmrs.hospital.lan` records.
+
+**Verify from a workstation** (not the server — the server uses an external resolver and
+cannot resolve `hospital.lan`, which is expected and must not be "fixed"):
+
+```bash
+nslookup viewer.hospital.lan
+```
+
+If a stale negative answer is cached: `ipconfig /flushdns` on Windows.
+
+---
+
+### 3.2 Workstation acceptance test
+
+**CLASS:** READ-ONLY
+
+Use a **private/incognito window**. A browser with cached Orthanc credentials will supply
+them silently and make a broken auth chain look healthy.
+
+1. `imaging.ohifBaseUrl` = `https://viewer.hospital.lan`
+2. OHIF icon renders on **both** the studies page and the Get studies page
+3. Icon opens `https://viewer.hospital.lan/viewer?StudyInstanceUIDs=<uid>`
+4. Study loads — no "Data Source Connection Error"
+5. **No native password prompt, ever.** If one appears the proxy has been bypassed.
+   Typing the password and seeing images is **NOT a pass** — it is proof of failure.
+6. DevTools console: no mixed-content warnings, no CORS errors
+7. MPR, volume rendering, and a saved segmentation brush stroke all work
+   (step 7 requires §2.1 first)
+
+**Server-side evidence** for whatever happened:
+
+```bash
+tail -40 /home/server/nginx-proxy-manager/data/logs/proxy-host-3_access.log
+```
+
+A healthy load shows `/dicom-web/studies`, then `.../metadata`, then `.../frames/<n>` — all
+`200`. If frames return 200 and images still do not appear, the fault is client-side
+rendering, not networking.
+
+---
+
+## 4. Priority 3 — hardening
+
+### 4.1 Connection-pool validation (the recurring 500s)
+
+**CLASS:** FILE CHANGE + PRODUCTION-IMPACTING (needs a restart)
+
+**Status:** not configured.
+
+**Why:** OpenMRS uses c3p0 with **no connection validation**, and MySQL closes connections
+idle beyond `wait_timeout` (**28800s = 8h**). After the stack sits idle for days, c3p0 hands
+Hibernate dead connections and pages fail with
+`Could not open Hibernate Session … JDBC begin transaction failed`. This **already happened
+on 2026-08-30** and was cleared by restarting `openmrs-app`. **It will recur.**
+
+Note `connection.url` already carries `autoReconnect=true` — a deprecated MySQL option that
+does **not** reliably prevent this and gives false confidence.
+
+**Candidate fix** — add to `/usr/local/tomcat/.OpenMRS/openmrs-runtime.properties`:
+
+```
+hibernate.c3p0.preferredTestQuery=SELECT 1
+hibernate.c3p0.idleConnectionTestPeriod=300
+hibernate.c3p0.testConnectionOnCheckout=true
+```
+
+> **Verify rather than assume.** I have not confirmed that this OpenMRS build forwards
+> `hibernate.c3p0.*` from the runtime properties to Hibernate. Back the file up, apply,
+> restart, and confirm the settings take effect before treating this as fixed.
+
+**Workaround meanwhile:** `docker restart openmrs-app` (~2 minutes).
+
+---
+
+### 4.2 Make NPM's network attachment durable
+
+**CLASS:** FILE CHANGE + container recreate
+
+**Status:** manual only. `~/nginx-proxy-manager/docker-compose.yml` has **no `networks:`
+section**, yet NPM must sit on `openmrs-orthanc-integration_default` to resolve
+`ohif-viewer` and `orthanc-cors-proxy`.
+
+**Consequence:** recreating the NPM container drops the attachment and **every proxy host
+returns 502** — OpenMRS, Orthanc and OHIF all become unreachable by hostname at once.
+
+**Immediate re-attach if it happens:**
+
+```bash
+docker network connect openmrs-orthanc-integration_default nginx-proxy-manager-app-1
+```
+
+**Durable fix** — add to its compose file:
+
+```yaml
+services:
+  app:
+    networks:
+      - default
+      - openmrs
+
+networks:
+  openmrs:
+    external: true
+    name: openmrs-orthanc-integration_default
+```
+
+Then `docker compose up -d` in `~/nginx-proxy-manager`. NPM's state lives in the `./data`
+bind mount, so recreation does not lose proxy hosts or certificates — **but back up
+`./data/database.sqlite` first.**
+
+**Verify:**
+
+```bash
+docker exec nginx-proxy-manager-app-1 getent hosts ohif-viewer orthanc-cors-proxy
+```
+
+---
+
+### 4.3 Move credentials to `.env` and rotate
+
+**CLASS:** FILE CHANGE + PRODUCTION-IMPACTING
+
+**Status:** `orthanc-docker-compose.yml` and `openmrs-docker-compose.yml` each carry **3**
+inline secrets. `.env` holds only `MEDREPORT_RGS_TOKEN`.
+
+The Orthanc password was also published in the old project README, so it should be treated as
+**disclosed** and rotated, not merely relocated.
+
+**The trap:** the Orthanc password exists in **three** places that must change together, or
+the chain breaks:
+
+| Place | What |
+| --- | --- |
+| `orthanc-docker-compose.yml` | `ORTHANC__REGISTERED_USERS` |
+| `orthanc-cors-proxy.conf` | `proxy_set_header Authorization "Basic <base64 of user:pass>"` |
+| `imaging_OrthancConfiguration` table | `orthancPassword`, via **Administration → Configuring the Orthanc server** |
+
+Changing only the first produces a working-looking system where OHIF 401s and OpenMRS uploads
+fail. Sequence the change and re-verify §3.2 afterwards.
+
+---
+
+## 5. Priority 4 — housekeeping
+
+| Item | Detail |
+| --- | --- |
+| **`node:alpine` image (178 MB)** | Pulled during this work for a one-off JavaScript syntax check. Nothing uses it: `docker image rm node:alpine`. |
+| **Misleading log level** | `ImagingActivator.java:29` logs `log.error("Started Imaging")` on **success**. Change to `log.info`. Cosmetic but actively misleading during triage. |
+| **`.before-persistence` clutter** | Three stale files in `backup files/`. Remove once you are confident the persistence migration is settled. |
+| **Nothing is in version control** | `origin/main` holds only a README and an old submodule pointer. `ohif-app-config.js`, `orthanc-cors-proxy.conf` and the compose files exist **only on this disk**. `git checkout <file>` is **not** a rollback path — use `backup files/` and `module-backups/`. The repo is also in a half-migrated submodule state, so **no `git` write commands** without explicit authorisation. |
+
+---
+
+## 6. Decisions needed
+
+1. **Were `OHIF-Integration-Status.md` and `OHIF-HTTPS-HANDOFF.md` deleted intentionally?**
+   Both existed on 2026-08-26 and are gone from this directory. An archived copy of the former
+   is at `../openmrs-orthanc-integration-backup_25_08_2026/`. If unintentional, restore it.
+
+2. **Should PACS-deleted studies that are assigned to a patient be preserved?**
+   1.2.0 prunes them and logs a `WARN` naming the study and patient. One has already been
+   removed (patient 9, study `…1245427`). Rationale: the study no longer exists in Orthanc, so
+   every link on it 404s. To preserve them instead, make
+   `removeStudiesDeletedFromOrthanc` skip rows where `getMrsPatient() != null` — see the
+   module README.
+
+---
+
+## 7. Rollback inventory
+
+| Artifact | Location |
+| --- | --- |
+| Previous module (1.1.3) | `~/imaging-1.1.3-SNAPSHOT.omod.rollback` (integrity-verified) |
+| Previous module (1.1.2) | `~/imaging-1.1.2-SNAPSHOT.omod.rollback` |
+| Module source before 1.2.0 edits | `module-backups/20260830-144548/` |
+| Config and doc backups | `backup files/*.bak-<timestamp>` |
+| NPM state | `~/nginx-proxy-manager/data/database.sqlite` |
+
+Bind-mounted files (`ohif-app-config.js`, `orthanc-cors-proxy.conf`) must be restored
+**inode-preserving**:
+
+```bash
+cat "backup files/<backup>" > <file>
+```

@@ -1,0 +1,70 @@
+/* Deliberately small: chublidatheme owns the page chrome, buttons and typography.
+   These rules only cover what this feature adds -- the pattern column, the report
+   banner and the session grid. */
+
+.chu-schedules h2 { margin-bottom: 0.2em; }
+
+.chu-intro,
+.chu-hint { color: #5a6570; font-size: 0.9em; }
+
+.chu-hint { display: block; margin-top: 0.3em; }
+
+.chu-muted { color: #8a949e; }
+
+.chu-table { width: 100%; border-collapse: collapse; margin: 1em 0; background: #fff; }
+.chu-table th,
+.chu-table td { padding: 0.55em 0.7em; border-bottom: 1px solid #e3e7ea; text-align: left; vertical-align: top; }
+.chu-table th { font-weight: 600; color: #4a5560; background: #f5f7f8; }
+.chu-table.chu-compact th,
+.chu-table.chu-compact td { padding: 0.35em 0.5em; }
+
+/* The pattern is the column people scan, so it gets the monospace treatment: the
+   rotation clause must not blur into the times next to it. */
+.chu-pattern { font-family: "DejaVu Sans Mono", Menlo, Consolas, monospace; font-size: 0.88em; }
+
+.chu-inactive td { opacity: 0.55; }
+
+.chu-badge {
+    display: inline-block; padding: 0.1em 0.5em; border-radius: 3px;
+    background: #e3e7ea; color: #4a5560; font-size: 0.78em; vertical-align: middle;
+}
+
+.chu-actions a { margin-right: 0.8em; }
+
+.chu-empty {
+    padding: 1.4em; background: #f5f7f8; border: 1px dashed #cfd6db;
+    border-radius: 4px; color: #6a747e; text-align: center;
+}
+
+.chu-error {
+    padding: 0.7em 1em; margin: 1em 0; border-left: 4px solid #c0392b;
+    background: #fdf3f2; color: #8c2c21;
+}
+
+.chu-form { margin: 1em 0; }
+.chu-form label { margin-right: 1em; }
+.chu-form-block .chu-field { margin-bottom: 0.9em; }
+.chu-form-block .chu-field > label { display: inline-block; min-width: 11em; font-weight: 600; }
+.chu-form-block .chu-field > label.chu-inline { min-width: 0; font-weight: normal; margin: 0 0.4em; }
+
+/* A dry run and a real write must never be mistaken for one another at a glance. */
+.chu-report { padding: 0.8em 1em; margin: 1.2em 0; border-radius: 4px; }
+.chu-dryrun { background: #fdf6e3; border-left: 4px solid #d6a400; }
+.chu-written { background: #eef8f0; border-left: 4px solid #2e8b57; }
+
+.chu-confirm {
+    margin: 1.2em 0; padding: 1em; background: #fdf6e3;
+    border: 1px solid #e8d9a8; border-radius: 4px;
+}
+
+.chu-inline-form { display: inline; margin: 0; }
+.chu-link-button {
+    background: none; border: none; padding: 0; color: #1f6fb2;
+    cursor: pointer; text-decoration: underline; font-size: inherit;
+}
+
+/* Bulk skip reasons: one sentence each, so the handful of dates that actually need
+   a decision are not buried under hundreds of identical rows. */
+.chu-skip-summary { margin: 0.4em 0 1em; padding-left: 1.2em; color: #5a6570; }
+.chu-skip-summary li { margin: 0.25em 0; }
+.chu-table-scroll { overflow-x: auto; }

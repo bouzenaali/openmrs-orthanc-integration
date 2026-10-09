@@ -739,5 +739,5 @@ needed the published port. The finding in §2.2 is closed.
 | Whether to rewrite git history for the exposed value, or accept rotation as sufficient | maintainer — `CLAUDE.md` requires an explicit decision |
 | Clinical label vocabulary (§4.3) | clinical |
 | Imaging module source, for the button and privilege (§4.4) | maintainer |
-| VRAM policy: is dictation stopped during imaging sessions, or is a larger card budgeted? | maintainer |
+| VRAM policy: is dictation stopped during imaging sessions, or is a larger card budgeted? | maintainer — **now pressing.** With vLLM, STT and MONAI all resident since 2026-10-09 the card sits at 13.8/16.3 GB. nnInteractive needs ~864 MB per prediction and has OOM'd at this headroom before. |
 | Driver autoload at boot, so a kernel update stops taking clinical features down | infrastructure |

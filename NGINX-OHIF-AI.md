@@ -299,7 +299,7 @@ risk to add two names.
 | **`pacs-api` has no source restriction.** §4.1 called for it to be limited to Server 2; it is not. | Any host on the LAN can reach it, but it **passes credentials through rather than injecting them**, so an unauthenticated request gets 401. It is not a bypass — unlike port 8043 — but the defence-in-depth layer is missing. |
 | ~~Port 8043 published to the LAN~~ | **CLOSED 2026-10-04.** `orthanc-cors-proxy` publishes nothing; verified unreachable from Server 2 while both viewers still answer 200. |
 | **`Task: Use AI Imaging Viewer` is assigned to no role.** | Only superusers, who bypass privilege checks, can see the button. |
-| **`stt-engine` is stopped.** | Dictation unavailable; stopped during GPU testing and not yet restarted. |
+| **All three GPU workloads are resident again** (restarted 2026-10-09) | Dictation is back, but the card is now at **13.8 GB of 16.3 GB**, leaving ~2 GB. nnInteractive needs ~864 MB *per prediction* on top of its resident footprint, so interactive segmentation is close to the edge and has OOM'd at this level before. One 16 GB card is doing three jobs. |
 
 ---
 
